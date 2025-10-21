@@ -12,8 +12,11 @@ public class Movimiento {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    private String descripcion;
-    private Double monto;
+    private Sensor sensor;
+    private Integer fecha;
+    private Integer temperatura;
+    private Integer humedad;
+    
 
     public Movimiento() { }
 

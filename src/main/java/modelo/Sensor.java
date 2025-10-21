@@ -11,8 +11,14 @@ public class Sensor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+    private String Nombre;
     private String tipo;
-    private String ubicacion;
+    private Double latitud;
+    private double longitud;
+    private String ciudad;
+    private String pais;
+    private String estado;
+    private String fechaEmision;
 
     public Sensor() { }
 

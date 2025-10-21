@@ -15,9 +15,16 @@ public class SensorService {
         return instance;
     }
 
-    public void crearSensor(String tipo, String ubicacion) {
+    public void createSensor(String tipo, String ubicacion) {
         Sensor s = new Sensor(tipo, ubicacion);
         ObjectRepository.getInstance().guardarSensor(s);
         System.out.println("Id " + s.getId());
     }
+    public Sensor getSensor(){
+        SensorRepository.getSensor()
+    }
+    public void updateSensor(){
+        
+    }
+    public void deleteSensor(String nombre)
 }
