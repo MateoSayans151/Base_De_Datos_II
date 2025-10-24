@@ -1,17 +1,3 @@
-Use tp
-db.usuario.insert({id:1,name:'Mateo',mail:'mateo@gmail.com',pass:'1234',estado:'activo',fechaR:ISODate('2025-06-25')});
-
-db.sensor.insert({id:1,cod:'S001',tipo:'temperatura',latitud:12,longitud:13,ciudad:'Buenos Aires'pais:'Argentina',estado:'activo',fechaIni:ISODate('2024-12-05')});
-db.sensor.insert({id:,cod:'S002',tipo:'humedad',latitud:30,longitud:20,ciudad:'Madrid',Pais:'España',estado:'inactivo',fechaIni:ISODate('2023-07-15')});
-
-db.rol.insert({idRol:1,descripcion:'usuario'});
-db.rol.insert({idRol:2,descripcion:'técnico'});
-db.rol.insert({idRol:3,descripcion:'administrador'});
-
-db.proceso.insert(idProc:1,nombre:'Deshumificador',descripcion:'deshumidifica el ambiente',tipo:'limpieza',costo:2000);
-db.proceso.insert(idProc:1,nombre:'Escoba',descripcion:'limpia el ambiente',tipo:'limpieza',costo:40000);
-
-db.factura.insert({idFac:1,usuario:{id:1,name:'Mateo',mail:'mateo@gmail.com',pass:'1234',estado:'activo',fechaR:ISODate('2025-06-25')},fechaEmi:ISODate('2023-07-15'),procesosFac:[{idProc:1,nombre:'Deshumificador',costo:2000},{idProc:2,nombre:'Escoba',costo:40000}],estado:'pagada'});
 
 use('tp');
 
@@ -161,7 +147,7 @@ validator:{
                 mail: {bsonType:'string', pattern: '^.+@.+\\..+$' },
                 estado: {enum:['activo','inactivo'],
             },},},
-        },},},})
+        },},},},});
 db.grupo.createIndex({ idGrupo: 1 }, { unique: true });
 
 db.createCollection('mensajes',{
