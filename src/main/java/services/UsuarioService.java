@@ -19,13 +19,13 @@ public class UsuarioService {
 		ObjectRepository.getInstance().guardarCliente(c);
 		System.out.println("Id " + c.getNumero());
 	}
-	public getUsuario(){
+	public Usuario getUsuario(){
 		return UsuarioRepository.getUsuario();
 	}
-	public void updateUsuario(Integer numero, String nombre, String cuit){
-		UsuarioRepository.modificarUsuario(numero,nombre,cuit)
+	public void updateUsuario(int numero, String nombre, String cuit){
+		UsuarioRepository.modificarUsuario(numero,nombre,cuit);
 	}
-	public void deleteUsuario(@PathVariable Integer id){
+	public void deleteUsuario(@PathVariable int id){
 		
 	}
 }

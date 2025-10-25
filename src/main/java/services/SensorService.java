@@ -21,10 +21,14 @@ public class SensorService {
         System.out.println("Id " + s.getId());
     }
     public Sensor getSensor(){
-        SensorRepository.getSensor()
+        SensorRepository.getSensor();
     }
+    /*
     public void updateSensor(){
         
     }
+
     public void deleteSensor(String nombre)
+    */
+
 }

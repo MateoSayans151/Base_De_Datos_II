@@ -3,15 +3,15 @@ package services;
 import modelo.Movimiento;
 import repositories.ObjectRepository;
 
-public class MovimientoService {
+public class MedicionService {
 
-    private static MovimientoService instance;
+    private static MedicionService instance;
 
-    private MovimientoService() {}
+    private MedicionService() {}
 
-    public static MovimientoService getInstance() {
+    public static MedicionService getInstance() {
         if (instance == null)
-            instance = new MovimientoService();
+            instance = new MedicionService();
         return instance;
     }
 
