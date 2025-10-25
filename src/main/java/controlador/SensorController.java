@@ -5,15 +5,18 @@ import services.SensorService;
 
 public class SensorController {
     
-    public void createSensor (Integer id, String tipo, String ubicacion){ 
+    public void createSensor (int id, String tipo, String ubicacion){
     }
     public Sensor getSensor(){
-        SensorService.getSensor()
+        SensorService.getSensor();
     }
-    public void updateSensor(@PathVariable Integer id, @RequestBody Sensor sensor){
-        return SensorService.updateSensor(id,sensor)
+    /*
+    public void updateSensor(@PathVariable int id, @RequestBody Sensor sensor){
+        return SensorService.updateSensor(id,sensor);
     }
-    public void deleteSensor(@PathVariable Integer id){
-        return SensorService.updateSensor(id)
+    public void deleteSensor(@PathVariable int id){
+        return SensorService.updateSensor(id);
     }
+
+     */
 }

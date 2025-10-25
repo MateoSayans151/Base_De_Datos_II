@@ -8,7 +8,7 @@ cod int,
 tipo text,
 latitud double,
 longitud double,
-ciudad text
+ciudad text,
 pais text,
 estado text,
 fechaIni text,

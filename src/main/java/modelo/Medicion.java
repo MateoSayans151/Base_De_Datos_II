@@ -7,7 +7,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
 @Entity
-public class Movimiento {
+public class Medicion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,9 +18,9 @@ public class Movimiento {
     private Integer humedad;
     
 
-    public Movimiento() { }
+    public Medicion() { }
 
-    public Movimiento(String descripcion, Double monto) {
+    public Medicion(String descripcion, Double monto) {
         this.descripcion = descripcion;
         this.monto = monto;
     }

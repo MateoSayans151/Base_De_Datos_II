@@ -14,7 +14,7 @@ public class Usuario {
 	private String email;
 	private String contraseña;
 	private String estado;
-	private Integer fechaRegistro;
+	private int fechaRegistro;
 	
 	public Usuario() { }
 
@@ -24,7 +24,7 @@ public class Usuario {
 
 	}
 
-	public Integer () {
+	public int getId() {
 		return id;
 	}
 
@@ -56,7 +56,7 @@ public class Usuario {
 		return fechaRegistro;
 	}
 
-	public void setfechaRegistro(integer fechaRegistro){
+	public void setfechaRegistro(int fechaRegistro){
 		this.fechaRegistro = fechaRegistro;
 	}
 	
