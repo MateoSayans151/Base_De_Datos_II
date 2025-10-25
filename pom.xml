@@ -3,7 +3,7 @@
   <groupId>ar.edu.uade</groupId>
   <artifactId>TPOSensores</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>CatalogoProductos</name>
+  <name>TPOSensores</name>
   
     <dependencies>
     <!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync -->
