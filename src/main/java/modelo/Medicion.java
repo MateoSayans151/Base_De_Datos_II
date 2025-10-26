@@ -1,51 +1,46 @@
 package modelo;
 
-
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 public class Medicion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private int id;
+
+    // Relación con Sensor (muchas mediciones pueden pertenecer a un sensor)
+    @ManyToOne
+    @JoinColumn(name = "sensor_id")
     private Sensor sensor;
-    private Integer fecha;
-    private Integer temperatura;
-    private Integer humedad;
-    
 
-    public Medicion() { }
+    private LocalDateTime fecha;   // fecha y hora de la medición
+    private Double temperatura;
+    private Double humedad;
 
-    public Medicion(String descripcion, Double monto) {
-        this.descripcion = descripcion;
-        this.monto = monto;
+    public Medicion() {}
+
+    public Medicion(Sensor sensor, LocalDateTime fecha, Double temperatura, Double humedad) {
+        this.sensor = sensor;
+        this.fecha = fecha;
+        this.temperatura = temperatura;
+        this.humedad = humedad;
     }
 
-    public Integer getId() {
-        return id;
-    }
+    // ---- Getters y Setters ----
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
+    public Sensor getSensor() { return sensor; }
+    public void setSensor(Sensor sensor) { this.sensor = sensor; }
 
-    public String getDescripcion() {
-        return descripcion;
-    }
+    public LocalDateTime getFecha() { return fecha; }
+    public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
 
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
+    public Double getTemperatura() { return temperatura; }
+    public void setTemperatura(Double temperatura) { this.temperatura = temperatura; }
 
-    public Double getMonto() {
-        return monto;
-    }
-
-    public void setMonto(Double monto) {
-        this.monto = monto;
-    }
+    public Double getHumedad() { return humedad; }
+    public void setHumedad(Double humedad) { this.humedad = humedad; }
 }

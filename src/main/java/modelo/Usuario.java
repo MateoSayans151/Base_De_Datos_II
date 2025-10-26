@@ -1,63 +1,78 @@
 package modelo;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 public class Usuario {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private String nombre;
-	private String email;
-	private String contraseña;
-	private String estado;
-	private int fechaRegistro;
-	
-	public Usuario() { }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
 
-	public Usuario(String nombre, String cuit) {
-		this.nombre = nombre;
-		this.cuit = cuit;
+    private String nombre;
+    private String email;
+    private String contrasena;
+    private String estado;
+    private LocalDateTime fechaRegistro;
 
-	}
+    public Usuario() {}
 
-	public int getId() {
-		return id;
-	}
+    public Usuario(String nombre, String email, String contrasena) {
+        this.nombre = nombre;
+        this.email = email;
+        this.contrasena = contrasena;
+        this.estado = "activo";
+        this.fechaRegistro = LocalDateTime.now();
+    }
 
-	public String getNombre() {
-		return nombre;
-	}
+    // --- Getters y Setters ---
+    public int getId() {
+        return id;
+    }
 
-	public void setNombre(String nombre) {
-		this.nombre = nombre;
-	}
+    public void setId(int id) {
+        this.id = id;
+    }
 
-	public String getEmail() {
-		return cuit;
-	}
+    public String getNombre() {
+        return nombre;
+    }
 
-	public void setEmail(String cuit) {
-		this.cuit = cuit;
-	}
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
 
-	public String getContraseña(){
-		return contraseña;
-	}
-	
-	public void setContraseña(String contraseña){
-		this.contraseña = contraseña;
-	}
-	
-	public Integer getfechaRegistro(){
-		return fechaRegistro;
-	}
+    public String getEmail() {
+        return email;
+    }
 
-	public void setfechaRegistro(int fechaRegistro){
-		this.fechaRegistro = fechaRegistro;
-	}
-	
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getContrasena() {
+        return contrasena;
+    }
+
+    public void setContrasena(String contrasena) {
+        this.contrasena = contrasena;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public LocalDateTime getFechaRegistro() {
+        return fechaRegistro;
+    }
+
+    public void setFechaRegistro(LocalDateTime fechaRegistro) {
+        this.fechaRegistro = fechaRegistro;
+    }
 }
+

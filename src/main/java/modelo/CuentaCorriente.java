@@ -10,7 +10,7 @@ public class CuentaCorriente {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private int id;
     private String numeroCuenta;
     private Double saldo;
 
@@ -21,11 +21,11 @@ public class CuentaCorriente {
         this.saldo = saldo;
     }
 
-    public Integer getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(int id) {
         this.id = id;
     }
 

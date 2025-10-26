@@ -1,53 +1,64 @@
 package modelo;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
 public class Sensor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-    private String Nombre;
+    private int id;
+
+    private String nombre;       // antes: Nombre
     private String tipo;
+
     private Double latitud;
-    private double longitud;
+    private Double longitud;
+
     private String ciudad;
     private String pais;
     private String estado;
+
     private String fechaEmision;
 
-    public Sensor() { }
+    // Campo que usás en ctor y getters/setters
+    private String ubicacion;
+
+    public Sensor() {}
 
     public Sensor(String tipo, String ubicacion) {
         this.tipo = tipo;
         this.ubicacion = ubicacion;
     }
 
-    public Integer getId() {
-        return id;
-    }
+    // ---- getters/setters ----
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
 
-    public String getTipo() {
-        return tipo;
-    }
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
 
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
-    }
+    public Double getLatitud() { return latitud; }
+    public void setLatitud(Double latitud) { this.latitud = latitud; }
 
-    public String getUbicacion() {
-        return ubicacion;
-    }
+    public Double getLongitud() { return longitud; }
+    public void setLongitud(Double longitud) { this.longitud = longitud; }
 
-    public void setUbicacion(String ubicacion) {
-        this.ubicacion = ubicacion;
-    }
+    public String getCiudad() { return ciudad; }
+    public void setCiudad(String ciudad) { this.ciudad = ciudad; }
+
+    public String getPais() { return pais; }
+    public void setPais(String pais) { this.pais = pais; }
+
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
+
+    public String getFechaEmision() { return fechaEmision; }
+    public void setFechaEmision(String fechaEmision) { this.fechaEmision = fechaEmision; }
+
+    public String getUbicacion() { return ubicacion; }
+    public void setUbicacion(String ubicacion) { this.ubicacion = ubicacion; }
 }
