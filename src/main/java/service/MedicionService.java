@@ -1,7 +1,7 @@
-package services;
+package service;
 
-import modelo.Movimiento;
-import repositories.ObjectRepository;
+import entity.Movimiento;
+import repository.ObjectRepository;
 
 public class MedicionService {
 

@@ -1,7 +1,7 @@
-package services;
+package service;
 
-import modelo.CuentaCorriente;
-import repositories.ObjectRepository;
+import entity.CuentaCorriente;
+import repository.ObjectRepository;
 
 public class CuentaCorrienteService {
 

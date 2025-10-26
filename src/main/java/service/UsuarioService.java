@@ -1,7 +1,7 @@
-package services;
+package service;
 
-import modelo.Usuario;
-import repositories.ObjectRepository;
+import entity.Usuario;
+import repository.ObjectRepository;
 
 public class UsuarioService {
 

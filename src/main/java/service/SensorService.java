@@ -1,7 +1,7 @@
-package services;
+package service;
 
-import modelo.Sensor;
-import repositories.ObjectRepository;
+import entity.Sensor;
+import repository.ObjectRepository;
 
 public class SensorService {
 
