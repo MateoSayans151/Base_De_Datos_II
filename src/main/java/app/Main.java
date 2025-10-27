@@ -21,8 +21,8 @@ public class Main {
 
         RedisPool.getInstance("localhost", 6379);
 
-        String urlPostgres = "jdbc:postgresql://localhost:5432/tpo_db";
-        SQLPool.getInstance(urlPostgres);
+        String urlMySQL = "jdbc:postgresql://localhost:5432/tpo_db";
+        SQLPool.getInstance(urlMySQL);
 
         System.out.println("Conectado a la base correctamente: " + db.getName());
 

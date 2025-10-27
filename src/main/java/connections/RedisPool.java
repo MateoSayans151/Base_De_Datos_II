@@ -7,7 +7,7 @@ public class RedisPool {
     private static RedisPool instance;
     private static JedisPool jedisPool;
 
-    private RedisPool(String host, int port,) {
+    private RedisPool(String host, int port) {
         JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
         jedisPoolConfig.setMaxTotal(20);
         jedisPoolConfig.setMaxIdle(10);
