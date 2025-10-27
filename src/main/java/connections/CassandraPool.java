@@ -32,7 +32,7 @@ public class CassandraPool {
     public static void close() {
         if (session != null) {
             session.close();
-            sysout.println("Cassandra session closed.");
+            System.out.println("Cassandra session closed.");
         }
     }
 }

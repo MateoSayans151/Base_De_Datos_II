@@ -16,7 +16,7 @@ fechayHora timestamp,
 temperatura int,
 humedad int,
 PRIMARY KEY((idMedicion),idSensor,fechayHora)
-);
+)WITH CLUSTERING ORDER BY (fechayHora DESC);
 
 CREATE TABLE Alertas(
 idAlerta uuid,
