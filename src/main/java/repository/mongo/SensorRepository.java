@@ -1,5 +1,5 @@
 package repository.mongo;
 
-public class SeonsorRepository {
+public class SensorRepository {
     
 }
