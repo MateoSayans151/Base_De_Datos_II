@@ -1,7 +1,6 @@
 package service;
 
 import entity.CuentaCorriente;
-import repository.ObjectRepository;
 
 public class CuentaCorrienteService {
 
