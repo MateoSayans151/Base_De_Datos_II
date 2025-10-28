@@ -2,14 +2,14 @@ package controller;
 
 import entity.Usuario;
 import org.springframework.web.bind.annotation.*;
-import repositorio.UsuarioRepository;
+//import repositorio.UsuarioRepository;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
-
+    /*
     private final UsuarioRepository repo;
 
     public UsuarioController(UsuarioRepository repo) {
@@ -46,4 +46,6 @@ public class UsuarioController {
     public void delete(@PathVariable int id) {
         repo.deleteById(id);
     }
+
+     */
 }

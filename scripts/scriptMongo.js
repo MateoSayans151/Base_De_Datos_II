@@ -1,6 +1,72 @@
 
 db = db.getSiblingDB('tpo')
 
+db.createCollection('usuario',{
+    validator:{
+        $jsonSchema:{
+            bsonType:'object',
+            required:['idUsuario','nombre','contrasena','mail','estado','nombreRol','fechaRegistro'],
+            properties:{
+                idUsuario: {bsonType:'int'},
+                nombre: {bsonType:'string'},
+                contrasena: {bsonType:'string'},
+                mail: {bsonType:'string', pattern: '^.+@.+\\..+$' },
+                estado: {enum:['Activo','Inactivo']},
+                nombreRol: {bsonType:'string'},
+                fechaRegistro: {bsonType:'date'},
+            },
+        },
+    }});
+db.usuario.createIndex({ idUsuario: 1 }, { unique: true });
+db.usuario.createIndex({ mail: 1 }, { unique: true });
+
+db.createCollection('rol',{
+    validator:{
+        $jsonSchema:{
+            bsonType:'object',
+            required:['idRol','nombre'],
+            properties:{
+                idRol: {bsonType:'int'},
+                nombre: {bsonType:'string'},
+            },
+        },
+    }});
+db.rol.createIndex({ idRol: 1 }, { unique: true });
+db.rol.createIndex({ nombre: 1 }, { unique: true });
+
+db.createCollection('proceso',{
+    validator:{
+        $jsonSchema:{
+            bsonType:'object',
+            properties:{
+                idProceso: {bsonType:'int'},
+                nombre: {bsonType:'string'},
+                descripcion: {bsonType:'string'},
+                tipo: {bsonType:'string'},
+                costo: {bsonType:['double','decimal']},
+            },
+        },
+    }});
+db.proceso.createIndex({ idProceso: 1 }, { unique: true});
+
+db.createCollection('factura',{
+    validator:{
+        $jsonSchema:{
+            bsonType:'object',
+            required:['idFactura','idUsuario','fechaEmision','procesosFacturados','total','estado'],
+            properties:{
+                idFactura: {bsonType:'int'},
+                idUsuario: {bsonType:'int'},
+                fechaEmision: {bsonType:'date'},
+                procesosFacturados: {bsonType:'string'},
+                total: {bsonType:['double','decimal']},
+                estado: {enum:['Pendiente','Pagada']},
+            },
+        }
+    }
+});
+db.factura.createIndex({ idFactura: 1 }, { unique: true });
+
 db.createCollection('sensor', {
   validator: {
     $jsonSchema: {
@@ -80,3 +146,20 @@ db.createCollection('alertas',{
     }});
 
 db.alertas.createIndex({ idAlerta: 1 }, { unique: true });
+
+db.createCollection('logs',{
+    validator:{
+        $jsonSchema:{
+            bsonType:'object',
+            required:['idEjec','solicitud','fecha','resultado','estado'],
+            properties:{
+                idEjec: {bsonType:'int'},
+                solicitud: {bsonType:'string'},
+                fecha: {bsonType:'date'},
+                resultado: {bsonType:'string'},
+                estado:{enum:['activa','resuelta']},
+            },
+        },
+    }
+});
+db.logs.createIndex({ idEjec:1 },{ unique:true });

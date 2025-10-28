@@ -3,7 +3,7 @@ package service;
 import entity.CuentaCorriente;
 
 public class CuentaCorrienteService {
-
+    /*
     private static CuentaCorrienteService instance;
 
     private CuentaCorrienteService() {}
@@ -19,4 +19,6 @@ public class CuentaCorrienteService {
         ObjectRepository.getInstance().guardarCuentaCorriente(cc);
         System.out.println("Id " + cc.getId());
     }
+
+     */
 }

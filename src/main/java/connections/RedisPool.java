@@ -2,12 +2,17 @@ package connections;
 
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import utilities.Config;
 
 public class RedisPool {
     private static RedisPool instance;
     private static JedisPool jedisPool;
 
-    private RedisPool(String host, int port) {
+    private RedisPool() {
+        Config config = Config.getInstance();
+        String host = config.getProperty("redis.host");
+        int port = Integer.parseInt(config.getProperty("redis.port"));
+
         JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
         jedisPoolConfig.setMaxTotal(20);
         jedisPoolConfig.setMaxIdle(10);
@@ -16,9 +21,9 @@ public class RedisPool {
 
     }
 
-    public static RedisPool getInstance(String host, int port) {
+    public static RedisPool getInstance() {
         if (instance == null)
-            instance = new RedisPool(host, port);
+            instance = new RedisPool();
         return instance;
     }
     public void close(){
