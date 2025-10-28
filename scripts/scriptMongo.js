@@ -1,11 +1,5 @@
 
-use('tp');
-
-//Limpia las bases si ya existen
-for (const c of ['sensor']) {
-  if (db.getCollectionNames().includes(c)) db.getCollection(c).drop();
-}
-
+db = db.getSiblingDB('tpo')
 
 db.createCollection('sensor', {
   validator: {
@@ -27,7 +21,7 @@ db.createCollection('sensor', {
     }
   }
 });
-db.sensor.createIndex({ id: 1 }, { unique: true });
+db.sensor.createIndex({ idSensor: 1 }, { unique: true });
 db.sensor.createIndex({ cod: 1 }, { unique: true });
 
 
@@ -49,9 +43,9 @@ validator:{
                 id: {bsonType:'int'},
                 nombre: {bsonType:'string'},
                 mail: {bsonType:'string', pattern: '^.+@.+\\..+$' },
-                estado: {enum:['activo','inactivo'],
+                estado: {enum:['activo','inactivo']},
             },},},
-        },},},},});
+        },},}});
 db.grupo.createIndex({ idGrupo: 1 }, { unique: true });
 
 db.createCollection('mensajes',{
@@ -64,25 +58,25 @@ validator:{
     remitente: {bsonType:'int'},
     destinatario:{bsonType:'int'},
     contenido: {bsonType:'string'},
-    fechaEnvio: {bsonType:'string'},
+    fechaEnvio: {bsonType:'date'},
     },},
-},});
-db.mensajes.createIndex({ remitente: 1, fecha: -1 })
+}});
+db.mensajes.createIndex({ remitente: 1, fechaEnvio: -1 })
 
 db.createCollection('alertas',{
-validator:{
-    $jsonSchema:{
-        bsonType:'object',
-        required:['idAlerta','tipo','idSensor','fechayHora','descripcion','estado'],
-        properties:{
-        idAlerta: {bsonType:'int'},
-        tipo: {enum:['temperatura','humedad','presion','movimiento','otro']},
-        idSensor: {bsonType:'int'},
-        fechayHora: {bsonType:'date'},
-        descripcion: {bsonType:'string'},
-        estado: {enum:['activa','resuelta']},
+    validator:{
+        $jsonSchema:{
+            bsonType:'object',
+            required:['idAlerta','tipo','idSensor','fechayHora','descripcion','estado'],
+            properties:{
+                idAlerta: {bsonType:'int'},
+                tipo: {enum:['temperatura','humedad','presion','movimiento','otro']},
+                idSensor: {bsonType:'int'},
+                fechayHora: {bsonType:'date'},
+                descripcion: {bsonType:'string'},
+                estado: {enum:['activa','resuelta']},
+            },
         },
-    },
-},
-});
+    }});
+
 db.alertas.createIndex({ idAlerta: 1 }, { unique: true });
