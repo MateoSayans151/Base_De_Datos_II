@@ -2,14 +2,14 @@ package controller;
 
 import entity.Medicion;
 import org.springframework.web.bind.annotation.*;
-import repositorio.MedicionRepository;
+//import repositorio.MedicionRepository;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/mediciones")
 public class MedicionController {
-
+    /*
     private final MedicionRepository repo;
 
     public MedicionController(MedicionRepository repo) {
@@ -46,4 +46,6 @@ public class MedicionController {
     public void delete(@PathVariable int id) {
         repo.deleteById(id);
     }
+
+     */
 }

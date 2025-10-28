@@ -7,9 +7,9 @@ public class Sensor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private int idSensor;
 
-    private String nombre;       // antes: Nombre
+    private String cod;       // antes: Nombre
     private String tipo;
 
     private Double latitud;
@@ -19,7 +19,7 @@ public class Sensor {
     private String pais;
     private String estado;
 
-    private String fechaEmision;
+    private String fechaIni;
 
     // Campo que usás en ctor y getters/setters
     private String ubicacion;
@@ -32,11 +32,11 @@ public class Sensor {
     }
 
     // ---- getters/setters ----
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public int getIdSensor() { return idSensor; }
+    public void setIdSensor(int idSensor) { this.idSensor = idSensor; }
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getCod() { return cod; }
+    public void setCod(String cod) { this.cod = cod; }
 
     public String getTipo() { return tipo; }
     public void setTipo(String tipo) { this.tipo = tipo; }
@@ -56,8 +56,8 @@ public class Sensor {
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 
-    public String getFechaEmision() { return fechaEmision; }
-    public void setFechaEmision(String fechaEmision) { this.fechaEmision = fechaEmision; }
+    public String getFechaIni() { return fechaIni; }
+    public void setFechaIni(String fechaIni) { this.fechaIni = fechaIni; }
 
     public String getUbicacion() { return ubicacion; }
     public void setUbicacion(String ubicacion) { this.ubicacion = ubicacion; }

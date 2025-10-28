@@ -1,6 +1,7 @@
 package connections;
 
-import java.net.InetSocketAddress;
+import utilities.Config;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -8,15 +9,19 @@ public class SQLPool {
 
     private static SQLPool instance;
     private final String url;
-    private final String user = "admin";
-    private final String password = "admin";
+    private final String user ;
+    private final String password ;
 
-    private SQLPool(String url){
-        this.url = url;
+
+    private SQLPool(){
+        Config config = Config.getInstance();
+        this.url = config.getProperty("sql.url");
+        this.user = config.getProperty("sql.user");
+        this.password = config.getProperty("sql.password");
     }
-    public static  SQLPool getInstance(String url) {
+    public static  SQLPool getInstance() {
         if (instance == null) {
-            instance = new SQLPool(url);
+            instance = new SQLPool();
             System.out.println("SQL inicializado.");
         }
         return instance;

@@ -1,5 +1,5 @@
-CREATE KEYSPACE baseCass with replication= {'class':'SimpleStrategy','replication_factor':1};
-USE baseCass;
+CREATE KEYSPACE tpo with replication= {'class':'SimpleStrategy','replication_factor':1};
+USE tpo;
 
 CREATE TABLE Mediciones(
 idMedicion uuid,
@@ -11,12 +11,11 @@ longitud double,
 ciudad text,
 pais text,
 estado text,
-fechaIni text,
 fechayHora timestamp,
 temperatura int,
 humedad int,
 PRIMARY KEY((idMedicion),idSensor,fechayHora)
-)WITH CLUSTERING ORDER BY (fechayHora DESC);
+)WITH CLUSTERING ORDER BY (idSensor ASC,fechayHora DESC);
 
 CREATE TABLE Alertas(
 idAlerta uuid,

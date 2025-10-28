@@ -3,14 +3,14 @@ package controller;
 import org.springframework.web.bind.annotation.*;
 
 import entity.Sensor;
-import repository.RegistroSensorRepository;
+//import repository.RegistroSensorRepository;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/registros-sensor")
 public class RegistroSensorController {
-
+/*
     private final RegistroSensorRepository repo;
 
     public RegistroSensorController(RegistroSensorRepository repo) {
@@ -47,4 +47,6 @@ public class RegistroSensorController {
     public void delete(@PathVariable int id) {
         repo.deleteById(id);
     }
+
+ */
 }

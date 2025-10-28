@@ -1,15 +1,21 @@
 package connections;
 
 import com.datastax.oss.driver.api.core.CqlSession;
-import org.hibernate.boot.cfgxml.internal.ConfigLoader;
+import utilities.Config;
 
 import java.net.InetSocketAddress;
 
 public class CassandraPool {
 
+    private static CassandraPool instance;
     private static CqlSession session;
 
-    public static void connect(String node, int port, String datacenter) {
+
+    private CassandraPool() {
+        Config config = Config.getInstance();
+        String node = config.getProperty("cassandra.node");
+        int port = Integer.parseInt(config.getProperty("cassandra.port"));
+        String datacenter = config.getProperty("cassandra.datacenter");
         try{
             session = CqlSession.builder()
                     .addContactPoint(new InetSocketAddress(node, port))
@@ -21,7 +27,13 @@ public class CassandraPool {
         }
 
     }
-
+    public static CassandraPool getInstance() {
+        if (instance == null){
+            instance = new CassandraPool();
+            System.out.println("Cassandra inicializado.");
+        }
+        return instance;
+    }
     public static CqlSession getSession() {
         if (session == null) {
             throw new IllegalStateException("Cassandra session is not initialized. Call connect() first.");

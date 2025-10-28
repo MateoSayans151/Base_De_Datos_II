@@ -2,13 +2,14 @@ package entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 public class Medicion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private UUID id;
 
     // Relación con Sensor (muchas mediciones pueden pertenecer a un sensor)
     @ManyToOne
@@ -29,8 +30,8 @@ public class Medicion {
     }
 
     // ---- Getters y Setters ----
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
 
     public Sensor getSensor() { return sensor; }
     public void setSensor(Sensor sensor) { this.sensor = sensor; }

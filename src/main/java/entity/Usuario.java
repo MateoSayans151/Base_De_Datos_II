@@ -11,18 +11,20 @@ public class Usuario {
     private int id;
 
     private String nombre;
-    private String email;
+    private String mail;
     private String contrasena;
     private String estado;
+    private String rol;
     private LocalDateTime fechaRegistro;
 
     public Usuario() {}
 
-    public Usuario(String nombre, String email, String contrasena) {
+    public Usuario(String nombre, String email, String contrasena, String rol) {
         this.nombre = nombre;
-        this.email = email;
+        this.mail = email;
         this.contrasena = contrasena;
         this.estado = "activo";
+        this.rol = rol;
         this.fechaRegistro = LocalDateTime.now();
     }
 
@@ -43,12 +45,12 @@ public class Usuario {
         this.nombre = nombre;
     }
 
-    public String getEmail() {
-        return email;
+    public String getMail() {
+        return mail;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setMail(String email) {
+        this.mail = email;
     }
 
     public String getContrasena() {
@@ -74,5 +76,7 @@ public class Usuario {
     public void setFechaRegistro(LocalDateTime fechaRegistro) {
         this.fechaRegistro = fechaRegistro;
     }
+    public String getRol() {return rol;}
+    public void setRol(String rol) {this.rol = rol;}
 }
 
