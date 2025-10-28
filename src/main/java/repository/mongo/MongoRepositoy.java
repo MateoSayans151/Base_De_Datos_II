@@ -1,4 +1,4 @@
-package repositories;	
+package repository.mongo;	
 
 public class MongoRepositoy {
 	

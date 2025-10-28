@@ -1,4 +1,4 @@
-package repositories;
+package repository.CassandraRepository;
 
 public class CassandraRepository {
     private static CassandraRepository instance;
