@@ -9,12 +9,12 @@ public class Rol {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id; // ID de rol
 
-    private String descripcion; // usuario – técnico – administrador
+    private String nombre; // usuario – técnico – administrador
 
     public Rol() {}
 
-    public Rol(String descripcion) {
-        this.descripcion = descripcion;
+    public Rol(String nombre) {
+        this.nombre = nombre;
     }
 
     // --- Getters y Setters ---
@@ -26,11 +26,11 @@ public class Rol {
         this.id = id;
     }
 
-    public String getDescripcion() {
-        return descripcion;
+    public String getNombre() {
+        return nombre;
     }
 
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 }

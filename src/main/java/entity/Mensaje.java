@@ -8,7 +8,7 @@ public class Mensaje {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id; // ID de mensaje
+    private int id; // idMensaje de mensaje
 
     // Usuario que envía el mensaje
     @ManyToOne
@@ -17,15 +17,15 @@ public class Mensaje {
 
     // Usuario destinatario (si es mensaje privado)
     @ManyToOne
-    @JoinColumn(name = "destinatario_id")
+    @JoinColumn(name = "destinatario_idMensaje")
     private Usuario destinatario;
 
     // Grupo destinatario (si es mensaje grupal)
     @ManyToOne
-    @JoinColumn(name = "grupo_id")
+    @JoinColumn(name = "idGrupo")
     private Grupo grupo;
 
-    private LocalDateTime fechaHora; // Fecha y hora de envío
+    private LocalDateTime fechaEnvio; // Fecha y hora de envío
 
     @Column(columnDefinition = "TEXT")
     private String contenido; // Texto del mensaje
@@ -39,7 +39,7 @@ public class Mensaje {
         this.destinatario = destinatario;
         this.contenido = contenido;
         this.tipo = tipo;
-        this.fechaHora = LocalDateTime.now();
+        this.fechaEnvio = LocalDateTime.now();
     }
 
     // --- Getters y Setters ---
@@ -47,8 +47,8 @@ public class Mensaje {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setId(int idMensaje) {
+        this.id = idMensaje;
     }
 
     public Usuario getRemitente() {
@@ -67,20 +67,13 @@ public class Mensaje {
         this.destinatario = destinatario;
     }
 
-    public Grupo getGrupo() {
-        return grupo;
+
+    public LocalDateTime getFechaEnvio() {
+        return fechaEnvio;
     }
 
-    public void setGrupo(Grupo grupo) {
-        this.grupo = grupo;
-    }
-
-    public LocalDateTime getFechaHora() {
-        return fechaHora;
-    }
-
-    public void setFechaHora(LocalDateTime fechaHora) {
-        this.fechaHora = fechaHora;
+    public void setFechaEnvio(LocalDateTime fechaEnvio) {
+        this.fechaEnvio = fechaEnvio;
     }
 
     public String getContenido() {
@@ -98,4 +91,7 @@ public class Mensaje {
     public void setTipo(String tipo) {
         this.tipo = tipo;
     }
+    public int getIdGrupo() {return grupo.getId();}
+    public  void setIdGrupo(int idGrupo) {this.grupo.setId(idGrupo);}
+
 }

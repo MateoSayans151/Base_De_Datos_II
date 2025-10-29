@@ -11,15 +11,15 @@ public class Proceso {
 
     private String nombre;
     private String descripcion;
-    private String tipoProceso;
+    private String tipo;
     private double costo;
 
     public Proceso() {}
 
-    public Proceso(String nombre, String descripcion, String tipoProceso, double costo) {
+    public Proceso(String nombre, String descripcion, String tipo, double costo) {
         this.nombre = nombre;
         this.descripcion = descripcion;
-        this.tipoProceso = tipoProceso;
+        this.tipo = tipo;
         this.costo = costo;
     }
 
@@ -48,12 +48,12 @@ public class Proceso {
         this.descripcion = descripcion;
     }
 
-    public String getTipoProceso() {
-        return tipoProceso;
+    public String getTipo() {
+        return tipo;
     }
 
-    public void setTipoProceso(String tipoProceso) {
-        this.tipoProceso = tipoProceso;
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
     }
 
     public double getCosto() {
