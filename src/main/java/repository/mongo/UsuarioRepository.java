@@ -30,6 +30,7 @@ public class UsuarioRepository {
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
         Document document = new Document()
+                .append("id", usuario.getId())
                 .append("nombre", usuario.getNombre())
                 .append("mail", usuario.getMail())
                 .append("contrasena", usuario.getContrasena())
@@ -73,56 +74,51 @@ public class UsuarioRepository {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
-        Usuario usuario = new Usuario();
+        Usuario user = new Usuario();
         try{
             Document filter = new Document("idUsuario", idUsuario);
             Document result = collection.find(filter).first();
             if (result != null) {
 
-                usuario.setId(result.getInteger("id"));
-                usuario.setNombre(result.getString("nombre"));
-                usuario.setMail(result.getString("mail"));
-                usuario.setContrasena(result.getString("contrasena"));
-                usuario.setEstado(result.getString("estado"));
-                usuario.setRol(result.getString("rol"));
-                usuario.setFechaRegistro(result.getDate("fechaRegistro").toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
-
+                user = mapearUsuario(result);
             }
         } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
-        return usuario;
+        return user;
     }
-    public List<Usuario> obtenerTodosUsuarios() {
-        String sql = "SELECT * FROM Usuario";
-        SQLPool sqlPool = SQLPool.getInstance();
+    public List<Usuario> obtenerTodosUsuarios() throws ErrorConectionMongoException {
+        String mongo = "SELECT * FROM usuarios";
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        var collection = connection.getCollection(COLLECTION_NAME);
         List<Usuario> usuarios = new java.util.ArrayList<>();
 
-        try (Connection connection = sqlPool.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            var resultSet = statement.executeQuery();
+        try {
+            var resultSet = collection.find();
 
-            while (resultSet.next()) {
-                Usuario usuario = mapearUsuario(resultSet);
-                usuarios.add(usuario);
+            while (resultSet.iterator().hasNext()) {
+                Document result = resultSet.iterator().next();
+                Usuario user = mapearUsuario(result);
+                usuarios.add(user);
             }
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
         return usuarios;
     }
 
-    public Usuario mapearUsuario(java.sql.ResultSet resultSet) throws SQLException {
-        Usuario usuario = new Usuario();
-        usuario.setId(resultSet.getInt("id"));
-        usuario.setNombre(resultSet.getString("name"));
-        usuario.setMail(resultSet.getString("mail"));
-        usuario.setContrasena(resultSet.getString("contrasena"));
-        usuario.setEstado(resultSet.getString("estado"));
-        usuario.setRol(resultSet.getString("rol"));
-        usuario.setFechaRegistro(resultSet.getTimestamp("fechaRegistro").toLocalDateTime());
-        return usuario;
+    public Usuario mapearUsuario(Document resultSet){
+        Usuario user = new Usuario();
+        user.setId(resultSet.getInteger("id"));
+        user.setNombre(resultSet.getString("name"));
+        user.setMail(resultSet.getString("mail"));
+        user.setContrasena(resultSet.getString("contrasena"));
+        user.setEstado(resultSet.getString("estado"));
+        user.setRol(resultSet.getString("rol"));
+        user.setFechaRegistro(resultSet.getDate("fechaRegistro").toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+        return user;
     }
 }

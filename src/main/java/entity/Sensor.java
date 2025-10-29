@@ -2,12 +2,14 @@ package entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 public class Sensor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int idSensor;
+    private int id;
 
     private String cod;       // antes: Nombre
     private String tipo;
@@ -19,21 +21,20 @@ public class Sensor {
     private String pais;
     private String estado;
 
-    private String fechaIni;
+    private LocalDateTime fechaIni;
 
-    // Campo que usás en ctor y getters/setters
-    private String ubicacion;
+
 
     public Sensor() {}
 
-    public Sensor(String tipo, String ubicacion) {
+    public Sensor(String tipo,String cod) {
         this.tipo = tipo;
-        this.ubicacion = ubicacion;
+        this.cod = cod;
     }
 
     // ---- getters/setters ----
-    public int getIdSensor() { return idSensor; }
-    public void setIdSensor(int idSensor) { this.idSensor = idSensor; }
+    public int getId() { return id; }
+    public void setId(int idSensor) { this.id = idSensor; }
 
     public String getCod() { return cod; }
     public void setCod(String cod) { this.cod = cod; }
@@ -56,9 +57,7 @@ public class Sensor {
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 
-    public String getFechaIni() { return fechaIni; }
-    public void setFechaIni(String fechaIni) { this.fechaIni = fechaIni; }
+    public LocalDateTime getFechaIni() { return fechaIni; }
+    public void setFechaIni(LocalDateTime fechaIni) { this.fechaIni = fechaIni; }
 
-    public String getUbicacion() { return ubicacion; }
-    public void setUbicacion(String ubicacion) { this.ubicacion = ubicacion; }
 }
