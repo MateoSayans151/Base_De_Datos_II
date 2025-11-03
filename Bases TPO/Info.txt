@@ -1,0 +1,33 @@
+
+MySql
+mysql -u root -p tpo < ~/Documents/TPO/scriptSQL.sql
+o
+mysql -u root -p < /ruta/completa/al/archivo/scriptSQL.sql
+
+mysql -u root -p tpo
+SHOW TABLES;
+
+O
+Si no tenes mysql
+docker exec -it bases-tpo-mysql mysql -u root -p
+SHOW DATABASES;
+USE tpo;
+SHOW TABLES;
+SELECT * FROM Usuario;
+EXIT;
+
+
+Mongo
+docker exec -i basestpo-mongo-1 mongosh --quiet /docker-entrypoint-initdb.d/scriptMongo.js
+Show dbs
+use tpo
+show collections
+
+Redis
+redis-cli
+Keys *
+
+Cassandra
+DESCRIBE KEYSPACES;
+use baseCass;
+DESCRIBE TABLES;
