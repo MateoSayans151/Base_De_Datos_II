@@ -6,6 +6,7 @@ import entity.Mensaje;
 import entity.Usuario;
 import exceptions.ErrorConectionMongoException;
 import org.bson.Document;
+import service.UsuarioService;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -80,12 +81,14 @@ public class MensajesRepository {
         return mensajes;
     }
 
-    public Mensaje mappearMensaje(Document doc) {
+    public Mensaje mappearMensaje(Document doc) throws ErrorConectionMongoException {
         if (doc == null) return null;
+        Usuario remitente = UsuarioService.instance.getById(doc.getInteger("remitente.id"));
+        Usuario destinatario = UsuarioService.instance.getById(doc.getInteger("destinatario.id"));
         Mensaje mensaje = new Mensaje();
         mensaje.setId(doc.getInteger("id"));
-        mensaje.setRemitente(doc.getInteger("remitente"));
-        mensaje.setDestinatario(doc.getInteger("destinatario"));
+        mensaje.setRemitente(remitente);
+        mensaje.setDestinatario(destinatario);
         mensaje.setContenido(doc.getString("contenido"));
         mensaje.setFechaEnvio(doc.getDate("fechaEnvio").toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
         mensaje.setTipo(doc.getString("tipo"));

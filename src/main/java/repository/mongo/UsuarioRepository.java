@@ -1,6 +1,7 @@
 package repository.mongo;
 
 import connections.MongoPool;
+import entity.Rol;
 import entity.Usuario;
 import exceptions.ErrorConectionMongoException;
 import org.bson.Document;
@@ -15,7 +16,7 @@ import java.util.List;
 public class UsuarioRepository {
 
     private static UsuarioRepository instance;
-    private static String COLLECTION_NAME = "usuarios";
+    private static String COLLECTION_NAME = "usuario";
 
     private UsuarioRepository() {}
 
@@ -25,7 +26,7 @@ public class UsuarioRepository {
         return instance;
     }
 
-    public void crearUsuario(Usuario usuario) throws ErrorConectionMongoException {
+    public void createUser(Usuario usuario) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
@@ -45,7 +46,7 @@ public class UsuarioRepository {
 
         System.out.println("Usuario creado con mail: " + usuario.getMail());
     }
-    public Usuario obtenerUsuarioPorMail(String mail) throws ErrorConectionMongoException {
+    public Usuario getUserByMail(String mail) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
@@ -70,13 +71,13 @@ public class UsuarioRepository {
 
         return usuario;
     }
-    public Usuario ObtenerPorId(int idUsuario) throws ErrorConectionMongoException {
+    public Usuario getUserById(int idUsuario) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
         Usuario user = new Usuario();
         try{
-            Document filter = new Document("idUsuario", idUsuario);
+            Document filter = new Document("id", idUsuario);
             Document result = collection.find(filter).first();
             if (result != null) {
 
@@ -87,8 +88,7 @@ public class UsuarioRepository {
         }
         return user;
     }
-    public List<Usuario> obtenerTodosUsuarios() throws ErrorConectionMongoException {
-        String mongo = "SELECT * FROM usuarios";
+    public List<Usuario> getAllUsers() throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
@@ -112,12 +112,19 @@ public class UsuarioRepository {
 
     public Usuario mapearUsuario(Document resultSet){
         Usuario user = new Usuario();
+        Document rolDoc = (Document) resultSet.get("rol");
+        Rol rol = new Rol();
+        if (rolDoc != null) {
+            Integer id = rolDoc.getInteger("idRol");
+            rol.setId(id);
+            rol.setNombre(rolDoc.getString("nombre"));
+        }
         user.setId(resultSet.getInteger("id"));
-        user.setNombre(resultSet.getString("name"));
+        user.setNombre(resultSet.getString("nombre"));
         user.setMail(resultSet.getString("mail"));
         user.setContrasena(resultSet.getString("contrasena"));
         user.setEstado(resultSet.getString("estado"));
-        user.setRol(resultSet.getString("rol"));
+        user.setRol(rol.getNombre());
         user.setFechaRegistro(resultSet.getDate("fechaRegistro").toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
         return user;
     }

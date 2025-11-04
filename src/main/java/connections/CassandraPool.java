@@ -16,10 +16,12 @@ public class CassandraPool {
         String node = config.getProperty("cassandra.node");
         int port = Integer.parseInt(config.getProperty("cassandra.port"));
         String datacenter = config.getProperty("cassandra.datacenter");
+        String keyspace = config.getProperty("cassandra.keyspace");
         try{
             session = CqlSession.builder()
                     .addContactPoint(new InetSocketAddress(node, port))
                     .withLocalDatacenter(datacenter)
+                    .withKeyspace(keyspace)
                     .build();
 
         }catch(Exception e){
@@ -34,7 +36,7 @@ public class CassandraPool {
         }
         return instance;
     }
-    public static CqlSession getSession() {
+    public CqlSession getSession() {
         if (session == null) {
             throw new IllegalStateException("Cassandra session is not initialized. Call connect() first.");
         }

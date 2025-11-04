@@ -1,5 +1,6 @@
 package repository.cassandra;
 
+import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import connections.CassandraPool;
 import entity.Medicion;
@@ -23,16 +24,16 @@ public class MedicionRepository {
         return instance;
     }
 
-    public void insertarMedicion(Medicion medicion){
-        String cass = "INSERT INTO Mediciones (idMedicion,idSensor,cod,tipo,latitud,longitud,ciudad,pais,estado,fecha,temperatura,humedad) " +
+    public void insertMeasurement(Medicion medicion){
+        String cass = "INSERT INTO Mediciones (id,idSensor,cod,tipo,latitud,longitud,ciudad,pais,estado,fecha,temperatura,humedad) " +
                 "VALUES (?,?,?,?,?,?,?,?,?,?,?,?);";
         CassandraPool cassandraPool = CassandraPool.getInstance();
-        var session = CassandraPool.getSession();
+        var session = cassandraPool.getSession();
         UUID id = UUID.randomUUID();
         Sensor sensor = medicion.getSensor();
         medicion.setId(id);
         session.execute(cass,medicion.getId(),
-                sensor.getIdSensor(),
+                sensor.getId(),
                 sensor.getCod(),
                 sensor.getTipo(),
                 sensor.getLatitud(),
@@ -45,19 +46,34 @@ public class MedicionRepository {
                 medicion.getHumedad()
         );
     }
-    public Medicion obtenerMedicion(String idMedicion){
-        String cass = "SELECT * FROM Mediciones WHERE idMedicion = ?;";
+    public Medicion getMeasurement(String idMedicion){
+        String cass = "SELECT * FROM mediciones WHERE id = ?;";
         CassandraPool cassandraPool = CassandraPool.getInstance();
-        var session = CassandraPool.getSession();
-        Row row = session.execute(cass,idMedicion).one();
+        var session = cassandraPool.getSession();
+        UUID id = UUID.fromString(idMedicion);
+        Row row = session.execute(cass,id).one();
         Medicion medicion = mappearMedicion(row);
         return medicion;
     }
-    public ArrayList<Medicion> obtenerMedicionesPorCiudad(String ciudad){
-        String cass = "SELECT * FROM Mediciones WHERE ciudad = ? ;";
+    public List<Medicion> getMeasurementBySensor(int idSensor){
+        String cass = "SELECT * FROM mediciones WHERE idSensor = ?;";
         CassandraPool cassandraPool = CassandraPool.getInstance();
-        var session = CassandraPool.getSession();
-        var resultSet = session.execute(cass,ciudad);
+        var session = cassandraPool.getSession();
+        var resultSet= session.execute(cass,idSensor);
+        List<Medicion> medicions = new ArrayList<>();
+
+        for (Row row : resultSet){
+            Medicion medicion = mappearMedicion(row);
+            medicions.add(medicion);
+        }
+
+        return medicions;
+    }
+    public ArrayList<Medicion> getMeasurements(){
+        String cass = "SELECT * FROM Mediciones ;";
+        CassandraPool cassandraPool = CassandraPool.getInstance();
+        var session = cassandraPool.getSession();
+        var resultSet = session.execute(cass);
         ArrayList<Medicion> mediciones = new ArrayList<>();
         for (Row row : resultSet) {
             Medicion medicion = mappearMedicion(row);
@@ -67,11 +83,11 @@ public class MedicionRepository {
 
     }
 
-    public List<Medicion> obtenerMedicionesPorPais(String pais){
-        String cass = "SELECT * FROM Mediciones WHERE pais = ? ;";
+    public List<Medicion> getMeasurementsBetwenDates(LocalDateTime fechaInicio, LocalDateTime fechaFin){
+        String cass = "SELECT * FROM Mediciones WHERE fechayHora >= ? AND fechayHora <= ? ;";
         CassandraPool cassandraPool = CassandraPool.getInstance();
-        var session = CassandraPool.getSession();
-        var resultSet = session.execute(cass,pais);
+        var session = cassandraPool.getSession();
+        var resultSet = session.execute(cass,fechaInicio,fechaFin);
         List<Medicion> mediciones = new java.util.ArrayList<>();
         for (Row row : resultSet) {
             Medicion medicion = mappearMedicion(row);
@@ -80,12 +96,11 @@ public class MedicionRepository {
         return mediciones;
     }
 
-
     public Medicion mappearMedicion(Row row){
         Medicion medicion = new Medicion();
         if (row != null) {
             medicion.setSensor(new Sensor());
-            medicion.setId(row.getUuid("idMedicion")) ;
+            medicion.setId(row.getUuid("id")) ;
             Instant date = row.getInstant("fechayHora");
             medicion.setFecha(LocalDateTime.ofInstant(date, ZoneId.systemDefault()));
             medicion.setTemperatura(row.getDouble("temperatura")) ;
@@ -97,11 +112,12 @@ public class MedicionRepository {
             medicion.getSensor().setCiudad(row.getString("ciudad"));
             medicion.getSensor().setPais(row.getString("pais"));
             medicion.getSensor().setEstado(row.getString("estado"));
-            medicion.getSensor().setIdSensor(row.getInt("idSensor"));
+            medicion.getSensor().setId(row.getInt("idSensor"));
 
         }else{
             medicion = null;
         }
         return medicion;
     }
+
 }

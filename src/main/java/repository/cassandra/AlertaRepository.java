@@ -25,13 +25,13 @@ public class AlertaRepository {
         String cass = "INSERT INTO Alertas (idAlerta,idSensor,cod,tipo,latitud,longitud,ciudad,pais,estado,fechayHora,descripcion,estado) " +
                 "VALUES (?,?,?,?,?,?,?,?,?,?,?,?);";
         CassandraPool cassandraPool = CassandraPool.getInstance();
-        var session = CassandraPool.getSession();
+        var session = cassandraPool.getSession();
         UUID id = UUID.randomUUID();
         Sensor sensor = alerta.getSensor();
         alerta.setId(id);
         session.execute(cass,
                 alerta.getId(),
-                sensor.getIdSensor(),
+                sensor.getId(),
                 sensor.getCod(),
                 sensor.getTipo(),
                 sensor.getLatitud(),
@@ -48,7 +48,7 @@ public class AlertaRepository {
     public Alerta obtenerAlerta(String idAlerta){
         String cass = "SELECT * FROM Alertas WHERE idAlerta = ?;";
         CassandraPool cassandraPool = CassandraPool.getInstance();
-        var session = CassandraPool.getSession();
+        var session = cassandraPool.getSession();
         Row row = session.execute(cass, idAlerta).one();
         return mappearAlerta(row);
     }
@@ -56,7 +56,7 @@ public class AlertaRepository {
     public void eliminarAlerta(String idAlerta){
         String cass = "DELETE FROM Alertas WHERE idAlerta = ?;";
         CassandraPool cassandraPool = CassandraPool.getInstance();
-        var session = CassandraPool.getSession();
+        var session = cassandraPool.getSession();
         session.execute(cass, idAlerta);
     }
 
@@ -85,7 +85,7 @@ public class AlertaRepository {
             alerta.getSensor().setCiudad(row.getString("ciudad"));
             alerta.getSensor().setPais(row.getString("pais"));
             alerta.getSensor().setEstado(row.getString("estado")); // note: same column name in script
-            alerta.getSensor().setIdSensor(row.getInt("idSensor"));
+            alerta.getSensor().setId(row.getInt("idSensor"));
         } else {
             alerta = null;
         }

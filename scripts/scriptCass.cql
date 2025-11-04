@@ -29,7 +29,6 @@ pais text,
 estado text,
 fechayHora timestamp,
 descripcion text,
-estado text,
 PRIMARY KEY((id),idSensor,fechayHora)
 );
 
