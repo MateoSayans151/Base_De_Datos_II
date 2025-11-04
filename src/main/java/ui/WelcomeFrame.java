@@ -5,7 +5,7 @@ import service.UsuarioService;
 import repository.redis.InicioSesionRepository;
 import repository.mongo.UsuarioRepository;
 import java.awt.*;
-
+/*
 public class WelcomeFrame extends JFrame {
     private final UsuarioService usuarioService;
     private final InicioSesionRepository sesionRepository;
@@ -127,3 +127,5 @@ public class WelcomeFrame extends JFrame {
         });
     }
 }
+
+ */

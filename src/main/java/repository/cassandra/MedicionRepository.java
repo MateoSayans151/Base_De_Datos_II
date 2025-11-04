@@ -1,5 +1,6 @@
 package repository.cassandra;
 
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import connections.CassandraPool;
@@ -9,6 +10,7 @@ import entity.Sensor;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -46,17 +48,9 @@ public class MedicionRepository {
                 medicion.getHumedad()
         );
     }
-    public Medicion getMeasurement(String idMedicion){
-        String cass = "SELECT * FROM mediciones WHERE id = ?;";
-        CassandraPool cassandraPool = CassandraPool.getInstance();
-        var session = cassandraPool.getSession();
-        UUID id = UUID.fromString(idMedicion);
-        Row row = session.execute(cass,id).one();
-        Medicion medicion = mappearMedicion(row);
-        return medicion;
-    }
+
     public List<Medicion> getMeasurementBySensor(int idSensor){
-        String cass = "SELECT * FROM mediciones WHERE idSensor = ?;";
+        String cass = "SELECT * FROM mediciones WHERE idSensor = ? ;";
         CassandraPool cassandraPool = CassandraPool.getInstance();
         var session = cassandraPool.getSession();
         var resultSet= session.execute(cass,idSensor);
@@ -83,11 +77,15 @@ public class MedicionRepository {
 
     }
 
-    public List<Medicion> getMeasurementsBetwenDates(LocalDateTime fechaInicio, LocalDateTime fechaFin){
-        String cass = "SELECT * FROM Mediciones WHERE fechayHora >= ? AND fechayHora <= ? ;";
+    public List<Medicion> getMeasurementsBetwenDates(int idSensor,LocalDateTime from, LocalDateTime until){
+        Instant fromInstant = from.atZone(ZoneOffset.UTC).toInstant();
+        Instant untilInstant = until.atZone(ZoneOffset.UTC).toInstant();
+
+        String cass = "SELECT * FROM mediciones WHERE fechayHora >= ? AND fechayHora <= ? AND idSensor = ?;";
         CassandraPool cassandraPool = CassandraPool.getInstance();
         var session = cassandraPool.getSession();
-        var resultSet = session.execute(cass,fechaInicio,fechaFin);
+        var resultSet = session.execute(cass,fromInstant,untilInstant,idSensor);
+
         List<Medicion> mediciones = new java.util.ArrayList<>();
         for (Row row : resultSet) {
             Medicion medicion = mappearMedicion(row);

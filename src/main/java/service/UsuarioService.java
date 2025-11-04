@@ -32,6 +32,7 @@ public class UsuarioService {
 
     // CREAR NUEVO USUARIO
     public void create(Usuario usuario) throws ErrorConectionMongoException {
+        usuario.setFechaRegistro(java.time.LocalDateTime.now());
         UsuarioRepository.getInstance().createUser(usuario);
     }
 

@@ -1,5 +1,5 @@
 package ui;
-
+/*
 import javax.swing.*;
 import service.UsuarioService;
 import repository.redis.InicioSesionRepository;
@@ -149,3 +149,4 @@ public class LoginFrame extends JFrame {
         this.dispose();
     }
 }
+*/

@@ -2,12 +2,14 @@ package repository.mongo;
 
 import connections.MongoPool;
 import entity.Factura;
+import entity.Proceso;
 import entity.Usuario;
 import exceptions.ErrorConectionMongoException;
 import org.bson.Document;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -114,20 +116,15 @@ public class FacturaRepository {
         Date fecha = doc.getDate("fechaEmision");
         if (fecha != null) {
             Instant instant = Instant.ofEpochMilli(fecha.getTime());
-            LocalDateTime ldt = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+            LocalDate ldt = LocalDate.from(instant.atZone(ZoneId.systemDefault()));
             factura.setFechaEmision(ldt);
         }
 
 
-        factura.setProcesosFacturados(doc.getString("procesosFacturados"));
+        factura.setProcesosFacturados((List<Proceso>) doc.get("procesosFacturados"));
 
-        // total conversion
-        Object totalObj = doc.get("total");
-        if (totalObj instanceof Number) {
-            factura.setTotal(BigDecimal.valueOf(((Number) totalObj).doubleValue()));
-        } else {
-            factura.setTotal(null);
-        }
+
+        factura.setTotal(doc.getDouble(doc.getDouble("total")));
 
         factura.setEstado(doc.getString("estado"));
 

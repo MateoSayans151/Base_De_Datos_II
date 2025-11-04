@@ -39,7 +39,7 @@ public class RolRepository {
         }
     }
 
-    public Rol obtenerRol(String id) throws ErrorConectionMongoException {
+    public Rol obtenerRol(int id) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         Rol rol = null;

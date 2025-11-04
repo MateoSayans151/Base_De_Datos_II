@@ -30,13 +30,29 @@ public class UsuarioRepository {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
+        Document rolDoc = new Document()
+                .append("idRol", usuario.getRol().getId())
+                .append("nombre", usuario.getRol().getNombre());
+
+
+        String estadoNormalized = null;
+        if (usuario.getEstado() != null) {
+            if (usuario.getEstado().equalsIgnoreCase("activo")) {
+                estadoNormalized = "Activo";
+            } else if (usuario.getEstado().equalsIgnoreCase("inactivo")) {
+                estadoNormalized = "Inactivo";
+            } else {
+                estadoNormalized = usuario.getEstado();
+            }
+        }
+
         Document document = new Document()
                 .append("id", usuario.getId())
                 .append("nombre", usuario.getNombre())
                 .append("mail", usuario.getMail())
                 .append("contrasena", usuario.getContrasena())
-                .append("estado", usuario.getEstado())
-                .append("rol", usuario.getRol())
+                .append("estado", estadoNormalized)
+                .append("rol", rolDoc)
                 .append("fechaRegistro", Timestamp.valueOf(usuario.getFechaRegistro()));
         try{
             collection.insertOne(document);
@@ -51,17 +67,18 @@ public class UsuarioRepository {
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
         Usuario usuario = new Usuario();
+        Rol rol = new Rol();
         try {
             Document filter = new Document("mail", mail);
             Document result = collection.find(filter).first();
             if (result != null) {
-
+                rol = result.get("rol", Rol.class);
                 usuario.setId(result.getInteger("id"));
                 usuario.setNombre(result.getString("nombre"));
                 usuario.setMail(result.getString("mail"));
                 usuario.setContrasena(result.getString("contrasena"));
                 usuario.setEstado(result.getString("estado"));
-                usuario.setRol(result.getString("rol"));
+                usuario.setRol(rol);
                 usuario.setFechaRegistro(result.getDate("fechaRegistro").toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
 
             }
@@ -124,7 +141,7 @@ public class UsuarioRepository {
         user.setMail(resultSet.getString("mail"));
         user.setContrasena(resultSet.getString("contrasena"));
         user.setEstado(resultSet.getString("estado"));
-        user.setRol(rol.getNombre());
+        user.setRol(rol);
         user.setFechaRegistro(resultSet.getDate("fechaRegistro").toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
         return user;
     }

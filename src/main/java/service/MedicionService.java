@@ -1,8 +1,11 @@
 package service;
 
 import entity.Medicion;
+import entity.Sensor;
+import exceptions.ErrorConectionMongoException;
 import org.springframework.stereotype.Service;
 import repository.cassandra.MedicionRepository;
+import repository.mongo.SensorRepository;
 
 import javax.persistence.Tuple;
 import java.time.LocalDateTime;
@@ -29,11 +32,6 @@ public class MedicionService {
         return repo.getMeasurements();
     }
 
-    // OBTENER MEDICIÓN POR ID
-    public Medicion getById(String id) {
-        return repo.getMeasurement(id);
-    }
-
     // CREAR MEDICIÓN
     public void create(Medicion medicion) {
         repo.insertMeasurement(medicion);
@@ -46,7 +44,7 @@ public class MedicionService {
     }
 
     // OBTENER MEDICIONES EN UN RANGO DE FECHAS
-
+/*
     public List<Medicion> getByFechaAndCountryBetween(LocalDateTime from, LocalDateTime until, String country,String city, String state) {
         List<Medicion> measurements = new ArrayList<>();
         List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(from, until);
@@ -57,17 +55,21 @@ public class MedicionService {
         }
         return measurements;
     }
-
-    public Double getAverageHumidityBetweenDates(String city, LocalDateTime from, LocalDateTime until) {
+*/
+    public Double getAverageHumidityBetweenDates(String city, LocalDateTime from, LocalDateTime until) throws ErrorConectionMongoException {
+        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
         List<Medicion> measurements = new ArrayList<>();
-        List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(from, until);
-        for (Medicion m : measurementsRange) {
-            if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
-                measurements.add(m);
+        for (Sensor sensor : sensors) {
+            List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(sensor.getId(),from, until);
+            for (Medicion m : measurementsRange) {
+                if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
+                    measurements.add(m);
+                }
+
+
             }
-
-
         }
+
         var avgHum = measurements.stream()
                 .mapToDouble(mes -> mes.getHumedad())
                 .average()
@@ -76,12 +78,17 @@ public class MedicionService {
 
         return avgHum;
     }
-    public Double getAverageTemperatureBetweenDates(String city, LocalDateTime from, LocalDateTime until) {
+    public Double getAverageTemperatureBetweenDates(String city, LocalDateTime from, LocalDateTime until) throws ErrorConectionMongoException {
+        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
         List<Medicion> measurements = new ArrayList<>();
-        List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(from, until);
-        for (Medicion m : measurementsRange) {
-            if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
-                measurements.add(m);
+        for (Sensor sensor : sensors) {
+            List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(sensor.getId(),from, until);
+            for (Medicion m : measurementsRange) {
+                if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
+                    measurements.add(m);
+                }
+
+
             }
         }
         var avgTemp = measurements.stream()
