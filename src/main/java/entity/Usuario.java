@@ -2,7 +2,7 @@ package entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-
+import entity.Rol;
 @Entity
 public class Usuario {
 
@@ -14,12 +14,15 @@ public class Usuario {
     private String mail;
     private String contrasena;
     private String estado;
-    private String rol;
+
+    @ManyToOne
+    @JoinColumn(name = "rol_id")
+    private Rol rol;
     private LocalDateTime fechaRegistro;
 
     public Usuario() {}
 
-    public Usuario(String nombre, String email, String contrasena, String rol) {
+    public Usuario(String nombre, String email, String contrasena, Rol rol) {
         this.nombre = nombre;
         this.mail = email;
         this.contrasena = contrasena;
@@ -76,7 +79,7 @@ public class Usuario {
     public void setFechaRegistro(LocalDateTime fechaRegistro) {
         this.fechaRegistro = fechaRegistro;
     }
-    public String getRol() {return rol;}
-    public void setRol(String rol) {this.rol = rol;}
+    public Rol getRol() {return rol;}
+    public void setRol(Rol rol) {this.rol = rol;}
 }
 

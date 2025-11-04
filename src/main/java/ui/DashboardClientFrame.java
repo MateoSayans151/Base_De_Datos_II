@@ -1,5 +1,5 @@
 package ui;
-
+/*
 import javax.swing.*;
 import java.awt.*;
 import services.AuthService;
@@ -315,3 +315,4 @@ public class DashboardClientFrame extends JFrame {
         }
     }
 }
+*/

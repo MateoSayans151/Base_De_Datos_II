@@ -6,9 +6,11 @@ import connections.MongoPool;
 import connections.RedisPool;
 import connections.SQLPool;
 import entity.Medicion;
+import entity.Rol;
 import entity.Sensor;
 import entity.Usuario;
 import exceptions.ErrorConectionMongoException;
+import repository.mongo.RolRepository;
 import repository.redis.InicioSesionRepository;
 import service.MedicionService;
 import service.SensorService;
@@ -20,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws ErrorConectionMongoException, SQLException {
@@ -50,12 +53,24 @@ public class Main {
         System.out.println("Sensor obtenido: " + sensor.getCod() + " - " + sensor.getCiudad());
 
         MedicionService medicionService = MedicionService.getInstance();
-        Medicion medicion = medicionService.getById("f83d5d28-f1b0-4784-aa9e-48a9c81d113f");
-        System.out.println("Medicion obtenida: " + medicion.getTemperatura() + " - " + medicion.getHumedad());
-        LocalDateTime from = LocalDate.parse("2023-01-01").atStartOfDay();
-        LocalDateTime until = LocalDate.parse("2023-12-31").atTime(23,59,59);
-        var hum = medicionService.getAverageHumidityBetweenDates("Rosario", from, until);
+        List<Medicion> mediciones = medicionService.getBySensorId(23);
+        for (Medicion medicion : mediciones) {
+            System.out.println("Medicion obtenida:\n " + "Temperatura: "+ medicion.getTemperatura() + " \n " + "Humedad: "+medicion.getHumedad());
+        }
+
+        String from = "2025-11-04";
+        String until = "2025-11-04";
+        LocalDateTime fromLdt = LocalDate.parse(from).atStartOfDay();
+        LocalDateTime untilLdt = LocalDate.parse(until).atTime(23, 59, 59);
+        var hum = medicionService.getAverageHumidityBetweenDates("Rosario", fromLdt, untilLdt);
         System.out.println("Humedad promedio del sensor Rosario en 2023: " + hum);
+        var temp = medicionService.getAverageTemperatureBetweenDates("Rosario", fromLdt, untilLdt);
+        System.out.println("Temperatura promedio del sensor Rosario en 2023: " + temp);
+
+        Rol rol = RolRepository.getInstance().obtenerRol(1);
+        Usuario newUser = new Usuario("Juan Perez", "juanperez@gmail.com", "password123",rol);
+        usuarioService.create(newUser);
+        System.out.println("Nuevo usuario creado: " + newUser.getNombre() + " - " + newUser.getMail());
         CassandraPool.close();
         mongoPool.close();
 

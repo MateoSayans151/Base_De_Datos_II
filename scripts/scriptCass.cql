@@ -14,8 +14,8 @@ estado text,
 fechayHora timestamp,
 temperatura double,
 humedad double,
-PRIMARY KEY((id),idSensor,fechayHora)
-)WITH CLUSTERING ORDER BY (idSensor ASC,fechayHora DESC);
+PRIMARY KEY(idSensor,fechayHora)
+)WITH CLUSTERING ORDER BY (fechayHora DESC);
 
 CREATE TABLE Alertas(
 id uuid,

@@ -51,7 +51,19 @@ db.createCollection('proceso', {
         nombre: { bsonType: 'string' },
         descripcion: { bsonType: 'string' },
         tipo: { bsonType: 'string' },
-        costo: { bsonType: ['double', 'decimal'] }
+        costo: { bsonType: ['double', 'decimal'] },
+        usuarios: {
+            bsonType: 'array',
+            items: {
+                bsonType: 'object',
+                required: ['idUsuario', 'nombre', 'mail'],
+                properties: {
+                    idUsuario: { bsonType: 'int' },
+                    nombre: { bsonType: 'string' },
+                    mail: { bsonType: 'string', pattern: '^.+@.+\\..+$' }
+                }
+            }
+        }
       }
     }
   }

@@ -1,5 +1,5 @@
 package ui;
-
+/*
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import services.*;
@@ -187,4 +187,9 @@ public class DashboardFrame extends JFrame {
 
         return panel;
     }
+
+
 }
+
+
+ */
