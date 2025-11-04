@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-Main<TPOSensores>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "app.Main",
+            "projectName": "TPOSensores",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-WelcomeFrame<TPOSensores>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "ui.WelcomeFrame",
+            "projectName": "TPOSensores",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
