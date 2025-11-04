@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Service
 public class RegistroSensorService {
-
+/*
     private final RegistroSensorRepository repo;
 
     public RegistroSensorService(RegistroSensorRepository repo) {
@@ -27,8 +27,8 @@ public class RegistroSensorService {
     }
 
     // CREAR NUEVO REGISTRO
-    public RegistroSensor create(RegistroSensor registro) {
-        return repo.save(registro);
+    public void create(RegistroSensor registro) {
+        repo.save(registro);
     }
 
     // ACTUALIZAR REGISTRO EXISTENTE
@@ -41,4 +41,6 @@ public class RegistroSensorService {
     public void delete(int id) {
         repo.deleteById(id);
     }
+
+ */
 }

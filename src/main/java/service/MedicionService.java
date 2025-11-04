@@ -4,52 +4,91 @@ import entity.Medicion;
 import org.springframework.stereotype.Service;
 import repository.cassandra.MedicionRepository;
 
+import javax.persistence.Tuple;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class MedicionService {
 
-    private final MedicionRepository repo;
+    public static MedicionService instance;
+    private final MedicionRepository repo = MedicionRepository.getInstance();
 
-    public MedicionService(MedicionRepository repo) {
-        this.repo = repo;
+    public MedicionService() {
+    }
+    public static MedicionService getInstance() {
+        if (instance == null)
+            instance = new MedicionService();
+        return instance;
     }
 
     // LISTAR TODAS LAS MEDICIONES
     public List<Medicion> getAll() {
-        return repo.findAll();
+        return repo.getMeasurements();
     }
 
     // OBTENER MEDICIÓN POR ID
-    public Optional<Medicion> getById(int id) {
-        return repo.findById(id);
+    public Medicion getById(String id) {
+        return repo.getMeasurement(id);
     }
 
     // CREAR MEDICIÓN
-    public Medicion create(Medicion medicion) {
-        return repo.save(medicion);
+    public void create(Medicion medicion) {
+        repo.insertMeasurement(medicion);
     }
 
-    // ACTUALIZAR MEDICIÓN
-    public Medicion update(int id, Medicion medicion) {
-        medicion.setId(id);
-        return repo.save(medicion);
-    }
-
-    // ELIMINAR MEDICIÓN
-    public void delete(int id) {
-        repo.deleteById(id);
-    }
 
     // OBTENER MEDICIONES POR SENSOR
     public List<Medicion> getBySensorId(int sensorId) {
-        return repo.findBySensorId(sensorId);
+        return repo.getMeasurementBySensor(sensorId);
     }
 
     // OBTENER MEDICIONES EN UN RANGO DE FECHAS
-    public List<Medicion> getByFechaBetween(LocalDateTime desde, LocalDateTime hasta) {
-        return repo.findByFechaBetween(desde, hasta);
+
+    public List<Medicion> getByFechaAndCountryBetween(LocalDateTime from, LocalDateTime until, String country,String city, String state) {
+        List<Medicion> measurements = new ArrayList<>();
+        List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(from, until);
+        for (Medicion m : measurementsRange) {
+            if (m.getSensor().getCiudad().equalsIgnoreCase(country)) {
+                measurements.add(m);
+            }
+        }
+        return measurements;
+    }
+
+    public Double getAverageHumidityBetweenDates(String city, LocalDateTime from, LocalDateTime until) {
+        List<Medicion> measurements = new ArrayList<>();
+        List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(from, until);
+        for (Medicion m : measurementsRange) {
+            if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
+                measurements.add(m);
+            }
+
+
+        }
+        var avgHum = measurements.stream()
+                .mapToDouble(mes -> mes.getHumedad())
+                .average()
+                .orElse(0.0);
+
+
+        return avgHum;
+    }
+    public Double getAverageTemperatureBetweenDates(String city, LocalDateTime from, LocalDateTime until) {
+        List<Medicion> measurements = new ArrayList<>();
+        List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(from, until);
+        for (Medicion m : measurementsRange) {
+            if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
+                measurements.add(m);
+            }
+        }
+        var avgTemp = measurements.stream()
+                .mapToDouble(mes -> mes.getTemperatura())
+                .average()
+                .orElse(0.0);
+        return avgTemp;
     }
 }
+

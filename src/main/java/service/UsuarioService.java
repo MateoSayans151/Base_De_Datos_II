@@ -1,8 +1,11 @@
 package service;
 
 import entity.Usuario;
+import exceptions.ErrorConectionMongoException;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
-import repository.sql.UsuarioRepository;
+import repository.mongo.UsuarioRepository;
+import repository.redis.InicioSesionRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,36 +13,41 @@ import java.util.Optional;
 @Service
 public class UsuarioService {
 
-    private final UsuarioRepository repo;
+    public static UsuarioService instance;
+    private final InicioSesionRepository inicioSesionRepository;
 
-    public UsuarioService(UsuarioRepository repo) {
-        this.repo = repo;
+    public UsuarioService(InicioSesionRepository inicioSesionRepository) {
+        this.inicioSesionRepository = inicioSesionRepository;
     }
 
     // LISTAR TODOS LOS USUARIOS
-    public List<Usuario> getAll() {
-        return repo.findAll();
+    public List<Usuario> getAll() throws ErrorConectionMongoException {
+        return UsuarioRepository.getInstance().getAllUsers();
     }
 
     // OBTENER USUARIO POR ID
-    public Optional<Usuario> getById(int id) {
-        return repo.findById(id);
+    public Usuario getById(int id) throws ErrorConectionMongoException {
+        return UsuarioRepository.getInstance().getUserById(id);
     }
 
     // CREAR NUEVO USUARIO
-    public Usuario create(Usuario usuario) {
-        return repo.save(usuario);
+    public void create(Usuario usuario) throws ErrorConectionMongoException {
+        UsuarioRepository.getInstance().createUser(usuario);
     }
 
-    // ACTUALIZAR USUARIO EXISTENTE
-    public Usuario update(int id, Usuario usuario) {
-        usuario.setId(id);
-        return repo.save(usuario);
+    public Usuario getByMail(String mail) throws ErrorConectionMongoException {
+        return UsuarioRepository.getInstance().getUserByMail(mail);
     }
 
-    // ELIMINAR USUARIO
-    public void delete(int id) {
-        repo.deleteById(id);
+    public void Login(String token, Usuario usuario){
+        inicioSesionRepository.crearSesion(token, usuario);
     }
+    public JSONObject getSesion(String token){
+        return inicioSesionRepository.getSesion(token);
+    }
+    public void eliminarSesion(String token) {
+        inicioSesionRepository.eliminarSesion(token);
+    }
+
 }
 

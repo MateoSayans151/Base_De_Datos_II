@@ -2,6 +2,7 @@ package entity;
 
 import jakarta.persistence.*;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -20,7 +21,7 @@ public class Grupo {
         joinColumns = @JoinColumn(name = "grupo_id"),
         inverseJoinColumns = @JoinColumn(name = "usuario_id")
     )
-    private Set<Usuario> miembros = new HashSet<>();
+    private List<Usuario> miembros;
 
     public Grupo() {}
 
@@ -45,11 +46,11 @@ public class Grupo {
         this.nombre = nombre;
     }
 
-    public Set<Usuario> getMiembros() {
+    public List<Usuario> getMiembros() {
         return miembros;
     }
 
-    public void setMiembros(Set<Usuario> miembros) {
+    public void setMiembros(List<Usuario> miembros) {
         this.miembros = miembros;
     }
 

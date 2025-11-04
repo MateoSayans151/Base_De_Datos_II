@@ -1,8 +1,11 @@
 package connections;
 
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import utilities.Config;
+
+import java.sql.Connection;
 
 public class RedisPool {
     private static RedisPool instance;
@@ -25,6 +28,10 @@ public class RedisPool {
         if (instance == null)
             instance = new RedisPool();
         return instance;
+    }
+
+    public Jedis getConnection() {
+        return jedisPool.getResource();
     }
     public void close(){
         if (jedisPool != null){

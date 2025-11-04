@@ -25,7 +25,7 @@ public  class SensorRepository {
         return instance;
     }
 
-    public void guardarSensor(Sensor sensor) throws ErrorConectionMongoException {
+    public void saveSensor(Sensor sensor) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         try {
@@ -48,21 +48,21 @@ public  class SensorRepository {
             throw new ErrorConectionMongoException("Error al guardar el sensor en MongoDB");
         }
     }
-    public Sensor obtenerSensor(String id) throws ErrorConectionMongoException {
+    public Sensor getSensor(int idSensor) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         Sensor sensor = null;
         try {
-            var collection = connection.getCollection("sensores");
-            Document filter = new Document("id", id);
+            var collection = connection.getCollection(COLLECTION_NAME);
+            Document filter = new Document("id", idSensor);
             Document result = collection.find(filter).first();
-            sensor = mappearSensor(result);
+            sensor = mapSensor(result);
         }catch (Exception e) {
             throw new ErrorConectionMongoException("Error al obtener el sensor en MongoDB");
         }
         return sensor;
     }
-    public List<Sensor> obtenerSesoresPorCiudad(String ciudad) throws ErrorConectionMongoException {
+    public List<Sensor> getSensorsByCity(String ciudad) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
@@ -71,7 +71,7 @@ public  class SensorRepository {
             var resultSet = collection.find(new Document("ciudad", ciudad)).iterator();
             while (resultSet.hasNext()) {
                 Document result = resultSet.next();
-                Sensor sensor = mappearSensor(result);
+                Sensor sensor = mapSensor(result);
                 sensors.add(sensor);
             }
         } catch (Exception e) {
@@ -79,7 +79,7 @@ public  class SensorRepository {
         }
         return sensors;
     }
-    public List<Sensor> obtenerSensoresPorEstado(String estado) throws ErrorConectionMongoException {
+    public List<Sensor> getSensorsByState(String estado) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
@@ -88,7 +88,7 @@ public  class SensorRepository {
             var resultSet = collection.find(new Document("estado", estado)).iterator();
             while (resultSet.hasNext()) {
                 Document result = resultSet.next();
-                Sensor sensor = mappearSensor(result);
+                Sensor sensor = mapSensor(result);
                 sensors.add(sensor);
             }
         } catch (Exception e) {
@@ -96,7 +96,7 @@ public  class SensorRepository {
         }
         return  sensors;
     }
-    public List<Sensor> obtenerSensoresPorPais(String pais) throws ErrorConectionMongoException {
+    public List<Sensor> getSensorsByCountry(String pais) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
@@ -105,7 +105,7 @@ public  class SensorRepository {
             var resultSet = collection.find(new Document("pais", pais)).iterator();
             while (resultSet.hasNext()) {
                 Document result = resultSet.next();
-                Sensor sensor = mappearSensor(result);
+                Sensor sensor = mapSensor(result);
                 sensors.add(sensor);
             }
         } catch (Exception e) {
@@ -114,7 +114,7 @@ public  class SensorRepository {
         return  sensors;
     }
 
-    public Sensor mappearSensor(Document doc){
+    public Sensor mapSensor(Document doc){
         Sensor sensor = new Sensor();
         sensor.setId(doc.getInteger("id"));
         sensor.setCod(doc.getString("cod"));
