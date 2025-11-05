@@ -30,28 +30,20 @@ public class UsuarioRepository {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
+        int lastId = getLastId();
+        usuario.setId(lastId + 1);
         Document rolDoc = new Document()
                 .append("idRol", usuario.getRol().getId())
                 .append("nombre", usuario.getRol().getNombre());
 
 
-        String estadoNormalized = null;
-        if (usuario.getEstado() != null) {
-            if (usuario.getEstado().equalsIgnoreCase("activo")) {
-                estadoNormalized = "Activo";
-            } else if (usuario.getEstado().equalsIgnoreCase("inactivo")) {
-                estadoNormalized = "Inactivo";
-            } else {
-                estadoNormalized = usuario.getEstado();
-            }
-        }
 
         Document document = new Document()
                 .append("id", usuario.getId())
                 .append("nombre", usuario.getNombre())
                 .append("mail", usuario.getMail())
                 .append("contrasena", usuario.getContrasena())
-                .append("estado", estadoNormalized)
+                .append("estado", usuario.getEstado())
                 .append("rol", rolDoc)
                 .append("fechaRegistro", Timestamp.valueOf(usuario.getFechaRegistro()));
         try{
@@ -72,14 +64,7 @@ public class UsuarioRepository {
             Document filter = new Document("mail", mail);
             Document result = collection.find(filter).first();
             if (result != null) {
-                rol = result.get("rol", Rol.class);
-                usuario.setId(result.getInteger("id"));
-                usuario.setNombre(result.getString("nombre"));
-                usuario.setMail(result.getString("mail"));
-                usuario.setContrasena(result.getString("contrasena"));
-                usuario.setEstado(result.getString("estado"));
-                usuario.setRol(rol);
-                usuario.setFechaRegistro(result.getDate("fechaRegistro").toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+                usuario = mapearUsuario(result);
 
             }
         }catch (Exception e){
@@ -125,6 +110,20 @@ public class UsuarioRepository {
         }
 
         return usuarios;
+    }
+    private int getLastId() throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        var collection = connection.getCollection(COLLECTION_NAME);
+        try {
+            Document sort = new Document("id", -1);
+            Document result = collection.find().sort(sort).first();
+            if (result == null) return 0;
+            Integer id = result.getInteger("id");
+            return id != null ? id : 0;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Usuario mapearUsuario(Document resultSet){

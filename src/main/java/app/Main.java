@@ -15,6 +15,7 @@ import repository.redis.InicioSesionRepository;
 import service.MedicionService;
 import service.SensorService;
 import service.UsuarioService;
+import ui.WelcomeFrame;
 
 
 import java.sql.Connection;
@@ -27,7 +28,8 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) throws ErrorConectionMongoException, SQLException {
         System.out.println("Iniciando el TPO");
-
+        WelcomeFrame welcomeFrame = new WelcomeFrame();
+        /*
         CassandraPool cassandraPool = CassandraPool.getInstance();
 
 
@@ -71,11 +73,20 @@ public class Main {
         Usuario newUser = new Usuario("Juan Perez", "juanperez@gmail.com", "password123",rol);
         usuarioService.create(newUser);
         System.out.println("Nuevo usuario creado: " + newUser.getNombre() + " - " + newUser.getMail());
+
+        sensorService.createSensor("S-5555", "temperatura", -34.6037, -58.3816, "Buenos Aires", "Argentina",LocalDateTime.now());
+
+        List<Sensor> sensors = sensorService.getSensorsByCountry("Argentina");
+        for (Sensor s : sensors) {
+            System.out.println("Sensor en Argentina: " + s.getCod() + " - " + s.getCiudad());
+        }
+
+
         CassandraPool.close();
         mongoPool.close();
 
         System.out.println("Conexiones cerradas correctamente.");
 
-
+*/
     }
 }

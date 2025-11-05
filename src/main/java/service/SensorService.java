@@ -20,10 +20,9 @@ public class SensorService {
         return instance;
     }
 
-    public void createSensor(String cod,String tipo,Double latitud, Double longitud, String ciudad, String pais, String estado, LocalDateTime fechaIni) throws ErrorConectionMongoException {
-        Sensor s = new Sensor(cod,tipo, latitud, longitud, ciudad, pais, estado, fechaIni);
+    public void createSensor(String cod,String tipo,Double latitud, Double longitud, String ciudad, String pais,LocalDateTime fechaIni) throws ErrorConectionMongoException {
+        Sensor s = new Sensor(cod,tipo, latitud, longitud, ciudad, pais,fechaIni);
         SensorRepository.getInstance().saveSensor(s);
-        System.out.println("Id " + s.getId());
     }
     public Sensor getSensor(int idSensor) throws ErrorConectionMongoException {
         return SensorRepository.getInstance().getSensor(idSensor);
@@ -39,7 +38,9 @@ public class SensorService {
     public List<Sensor> getSensorsByCountry(String country) throws ErrorConectionMongoException {
         return SensorRepository.getInstance().getSensorsByCountry(country);
     }
-
+    public List<Sensor> getAllSensors() throws ErrorConectionMongoException {
+        return SensorRepository.getInstance().getAllSensors();
+    }
 
 
 

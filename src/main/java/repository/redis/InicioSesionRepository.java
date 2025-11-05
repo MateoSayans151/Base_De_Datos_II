@@ -2,6 +2,7 @@ package repository.redis;
 
 import connections.RedisPool;
 import entity.Usuario;
+import org.hibernate.Session;
 import org.json.JSONException;
 import org.json.JSONObject;
 import redis.clients.jedis.JedisPool;

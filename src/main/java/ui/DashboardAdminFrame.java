@@ -1,9 +1,11 @@
 package ui;
-/*
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
+
+import org.json.JSONObject;
 import service.*;
 import entity.*;
 import repository.redis.InicioSesionRepository;
@@ -21,29 +23,24 @@ public class DashboardAdminFrame extends JFrame {
     private final UsuarioService usuarioService;
     private final SensorService sensorService;
     private final MedicionService medicionService;
-    private final InicioSesionRepository sesionRepository;
-    private final MedicionRepository medicionRepository;
-    private final AlertaRepository alertaRepository;
 
     public DashboardAdminFrame(String token) {
         this.userToken = token;
         
         // Initialize services
-        this.usuarioService = new UsuarioService(new UsuarioRepository());
+        this.usuarioService = new UsuarioService();
         this.sensorService = new SensorService();
         this.medicionService = new MedicionService();
-        this.sesionRepository = new InicioSesionRepository();
-        this.medicionRepository = new MedicionRepository();
-        this.alertaRepository = new AlertaRepository();
         
         try {
-            Optional<Sesion> sesion = sesionRepository.findByToken(token);
-            if (sesion.isPresent()) {
-                Optional<Usuario> usuario = usuarioService.getById(sesion.get().getUsuarioId());
-                if (usuario.isPresent() && 
-                    (usuario.get().getRol().equalsIgnoreCase("admin") || 
-                     usuario.get().getRol().equalsIgnoreCase("tecnico"))) {
-                    this.currentUser = usuario.get();
+            JSONObject session = usuarioService.getSession(userToken);
+            if (session != null) {
+                int userId = session.getInt("id");
+                Usuario usuario = usuarioService.getById(userId);
+                if (usuario != null &&
+                    (usuario.getRol().getNombre().equals("Admin") ||
+                     usuario.getRol().getNombre().equals("Tecnico"))) {
+                    this.currentUser = usuario;
                 } else {
                     throw new SecurityException("Acceso no autorizado");
                 }
@@ -59,7 +56,7 @@ public class DashboardAdminFrame extends JFrame {
     }
 
     private void initializeUI() {
-        setTitle("Panel de Administración - " + currentUser.getRol().toUpperCase());
+        setTitle("Panel de Administración - " + currentUser.getRol());
         setSize(1024, 768);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -98,7 +95,7 @@ public class DashboardAdminFrame extends JFrame {
         userInfoPanel.setMaximumSize(new Dimension(250, 100));
         userInfoPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
-        JLabel roleLabel = new JLabel(currentUser.getRol().toUpperCase());
+        JLabel roleLabel = new JLabel(currentUser.getRol().getNombre());
         roleLabel.setForeground(new Color(46, 204, 113));
         roleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         roleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -230,18 +227,18 @@ public class DashboardAdminFrame extends JFrame {
                 String sensorId = sensorsTable.getValueAt(row, 0).toString();
                 
                 try {
-                    Sensor sensor = SensorService.getInstance().obtenerPorId(sensorId);
+                    Sensor sensor = SensorService.getInstance().getSensor(Integer.parseInt(sensorId));
                     if (sensor != null) {
                         // Actualizar labels
-                        labels[1].setText(sensor.getId());
-                        labels[3].setText(sensor.getNombre());
+                        labels[1].setText(sensorId);
+                        labels[3].setText(sensor.getCod());
                         labels[5].setText(sensor.getTipo());
                         labels[7].setText(String.valueOf(sensor.getLatitud()));
                         labels[9].setText(String.valueOf(sensor.getLongitud()));
                         labels[11].setText(sensor.getCiudad());
                         labels[13].setText(sensor.getPais());
                         labels[15].setText(sensor.getEstado());
-                        labels[17].setText(sensor.getFechaInicio().toString());
+                        labels[17].setText(sensor.getFechaIni().toString());
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(panel, 
@@ -262,11 +259,11 @@ public class DashboardAdminFrame extends JFrame {
             if (row != -1) {
                 String sensorId = sensorsTable.getValueAt(row, 0).toString();
                 try {
-                    Sensor sensor = SensorService.getInstance().obtenerPorId(sensorId);
+                    Sensor sensor = SensorService.getInstance().getSensor(Integer.parseInt(sensorId));
                     if (sensor != null) {
                         String newState = sensor.getEstado().equals("activo") ? "inactivo" : "activo";
                         sensor.setEstado(newState);
-                        SensorService.getInstance().actualizarSensor(sensor);
+                        //SensorService.getInstance().actualizarSensor(sensor);
                         refreshSensorsTable(sensorsTable);
                         JOptionPane.showMessageDialog(panel, 
                             "Estado del sensor actualizado correctamente.");
@@ -357,16 +354,8 @@ public class DashboardAdminFrame extends JFrame {
                 double lon = Double.parseDouble(longitudField.getText());
 
                 // Crear y guardar sensor
-                Sensor sensor = new Sensor(
-                    nombreField.getText(),
-                    tipoCombo.getSelectedItem().toString(),
-                    lat,
-                    lon,
-                    ciudadField.getText(),
-                    paisField.getText()
-                );
 
-                SensorService.getInstance().agregarSensor(sensor);
+                SensorService.getInstance().createSensor(nombreField.getText(),tipoCombo.getSelectedItem().toString(),lat, lon, ciudadField.getText(),paisField.getText(), java.time.LocalDateTime.now());
                 JOptionPane.showMessageDialog(dialog, 
                     "Sensor agregado correctamente", "Éxito", 
                     JOptionPane.INFORMATION_MESSAGE);
@@ -389,14 +378,14 @@ public class DashboardAdminFrame extends JFrame {
 
     private void refreshSensorsTable(JTable table) {
         try {
-            List<Sensor> sensores = SensorService.getInstance().obtenerTodosSensores();
+            List<Sensor> sensores = SensorService.getInstance().getAllSensors();
             DefaultTableModel model = (DefaultTableModel) table.getModel();
             model.setRowCount(0);
 
             for (Sensor sensor : sensores) {
                 model.addRow(new Object[]{
                     sensor.getId(),
-                    sensor.getNombre(),
+                    sensor.getCod(),
                     sensor.getTipo(),
                     sensor.getCiudad(),
                     sensor.getPais(),
@@ -437,7 +426,7 @@ public class DashboardAdminFrame extends JFrame {
 
     private void logout() {
         try {
-            AuthService.getInstance().logout(userToken);
+            usuarioService.logout(userToken);
             WelcomeFrame welcomeFrame = new WelcomeFrame();
             welcomeFrame.setVisible(true);
             this.dispose();
@@ -447,4 +436,3 @@ public class DashboardAdminFrame extends JFrame {
     }
 }
 
- */
