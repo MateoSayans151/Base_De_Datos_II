@@ -5,13 +5,13 @@ import service.UsuarioService;
 import repository.redis.InicioSesionRepository;
 import repository.mongo.UsuarioRepository;
 import java.awt.*;
-/*
+
 public class WelcomeFrame extends JFrame {
     private final UsuarioService usuarioService;
-    private final InicioSesionRepository sesionRepository;
+    private final InicioSesionRepository sessionRepository;
     public WelcomeFrame() {
-        this.usuarioService = new UsuarioService(new UsuarioRepository());
-        this.sesionRepository = new InicioSesionRepository();
+        this.usuarioService = new UsuarioService();
+        this.sessionRepository = InicioSesionRepository.getInstance();
         
         setTitle("Polyglot Persistence - Welcome");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -109,13 +109,13 @@ public class WelcomeFrame extends JFrame {
     }
 
     private void openLoginFrame() {
-        LoginFrame loginFrame = new LoginFrame(false); // false indica que es para login
+        LoginFrame loginFrame = new LoginFrame(usuarioService,sessionRepository); // false indica que es para login
         loginFrame.setVisible(true);
         this.dispose();
     }
 
     private void openRegisterFrame() {
-        LoginFrame registerFrame = new LoginFrame(true); // true indica que es para registro
+        LoginFrame registerFrame = new LoginFrame(usuarioService,sessionRepository); // true indica que es para registro
         registerFrame.setVisible(true);
         this.dispose();
     }
@@ -128,4 +128,3 @@ public class WelcomeFrame extends JFrame {
     }
 }
 
- */

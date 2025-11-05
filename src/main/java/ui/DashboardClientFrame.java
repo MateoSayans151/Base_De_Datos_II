@@ -1,9 +1,9 @@
 package ui;
-/*
+
 import javax.swing.*;
 import java.awt.*;
-import services.AuthService;
-import modelo.Usuario;
+import service.UsuarioService;
+import entity.Usuario;
 import exceptions.*;
 import java.awt.event.*;
 
@@ -12,13 +12,14 @@ public class DashboardClientFrame extends JFrame {
     private Usuario currentUser;
     private JPanel mainPanel;
     private CardLayout cardLayout;
+    private UsuarioService usuarioService = new UsuarioService();
 
     public DashboardClientFrame(String token) {
         this.userToken = token;
 
         try {
-            this.currentUser = AuthService.getInstance().validarToken(token);
-            if (currentUser == null || !"usuario".equalsIgnoreCase(currentUser.getRol())) {
+            this.currentUser = usuarioService.validateToken(token);
+            if (currentUser == null || !"Cliente".equalsIgnoreCase(currentUser.getRol().getNombre())) {
                 throw new SecurityException("Acceso no autorizado: se requiere rol de cliente");
             }
         } catch (Exception e) {
@@ -306,7 +307,7 @@ public class DashboardClientFrame extends JFrame {
 
     private void logout() {
         try {
-            AuthService.getInstance().logout(userToken);
+            usuarioService.logout(userToken);
             WelcomeFrame w = new WelcomeFrame();
             w.setVisible(true);
             this.dispose();
@@ -315,4 +316,3 @@ public class DashboardClientFrame extends JFrame {
         }
     }
 }
-*/

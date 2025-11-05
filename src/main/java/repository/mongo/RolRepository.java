@@ -23,7 +23,7 @@ public class RolRepository {
         return instance;
     }
 
-    public void crearRol(Rol rol) throws ErrorConectionMongoException {
+    public void createRole(Rol rol) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         try {
@@ -39,7 +39,7 @@ public class RolRepository {
         }
     }
 
-    public Rol obtenerRol(int id) throws ErrorConectionMongoException {
+    public Rol getRole(int id) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         Rol rol = null;
@@ -47,21 +47,34 @@ public class RolRepository {
             MongoCollection<Document> collection = connection.getCollection(COLLECTION_NAME);
             Document filter = new Document("id", id);
             Document result = collection.find(filter).first();
-            rol = mappearRol(result);
+            System.out.println(result);
+            rol = mapRol(result);
         } catch (Exception e) {
             throw new ErrorConectionMongoException("Error al obtener el rol en MongoDB");
         }
         return rol;
     }
 
-
-    public Rol mappearRol(Document doc) {
+    public Rol getRoleByName(String nombre) throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        Rol rol = null;
+        try {
+            MongoCollection<Document> collection = connection.getCollection(COLLECTION_NAME);
+            Document filter = new Document("nombre", nombre);
+            Document result = collection.find(filter).first();
+            rol = mapRol(result);
+        } catch (Exception e) {
+            throw new ErrorConectionMongoException("Error al obtener el rol por nombre en MongoDB");
+        }
+        return rol;
+    }
+    public Rol mapRol(Document doc) {
         if (doc == null) return null;
         Rol rol = new Rol();
 
         rol.setId(doc.getInteger("id"));
         rol.setNombre(doc.getString("nombre"));
-
         return rol;
     }
 }

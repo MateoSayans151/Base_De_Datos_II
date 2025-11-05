@@ -27,14 +27,14 @@ public class Sensor {
 
     public Sensor() {}
 
-    public Sensor(String cod,String tipo,Double latitud,Double longitud,String ciudad,String pais,String estado,LocalDateTime fechaIni) {
+    public Sensor(String cod,String tipo,Double latitud,Double longitud,String ciudad,String pais,LocalDateTime fechaIni) {
         this.cod = cod;
         this.tipo = tipo;
         this.latitud = latitud;
         this.longitud = longitud;
         this.ciudad = ciudad;
         this.pais = pais;
-        this.estado = estado;
+        this.estado = "activo";
         this.fechaIni = fechaIni;
     }
 
