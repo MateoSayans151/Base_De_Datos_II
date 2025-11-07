@@ -8,6 +8,9 @@ import entity.Sensor;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class AlertaRepository {
@@ -22,9 +25,10 @@ public class AlertaRepository {
     }
 
     public void crearAlerta(Alerta alerta){
-        String cass = "INSERT INTO Alertas (idAlerta,idSensor,cod,tipo,latitud,longitud,ciudad,pais,estado,fechayHora,descripcion,estado) " +
+        String cass = "INSERT INTO Alertas (id,idSensor,cod,tipo,latitud,longitud,ciudad,pais,estado,fechayHora,descripcion,estadoAlerta) " +
                 "VALUES (?,?,?,?,?,?,?,?,?,?,?,?);";
         CassandraPool cassandraPool = CassandraPool.getInstance();
+        Instant dateInstant = alerta.getFecha().atZone(ZoneOffset.UTC).toInstant();
         var session = cassandraPool.getSession();
         UUID id = UUID.randomUUID();
         Sensor sensor = alerta.getSensor();
@@ -39,32 +43,47 @@ public class AlertaRepository {
                 sensor.getCiudad(),
                 sensor.getPais(),
                 sensor.getEstado(),        // sensor state (as stored in table)
-                alerta.getFecha(),         // fechayHora
+                dateInstant,         // fechayHora
                 alerta.getDescripcion(),   // descripcion (alert text)
                 alerta.getEstado()         // estado (alert state)
         );
     }
 
     public Alerta obtenerAlerta(String idAlerta){
-        String cass = "SELECT * FROM Alertas WHERE idAlerta = ?;";
+        String cass = "SELECT * FROM Alertas WHERE idSensor = ?;";
         CassandraPool cassandraPool = CassandraPool.getInstance();
         var session = cassandraPool.getSession();
         Row row = session.execute(cass, idAlerta).one();
         return mappearAlerta(row);
     }
 
-    public void eliminarAlerta(String idAlerta){
-        String cass = "DELETE FROM Alertas WHERE idAlerta = ?;";
+    public void eliminarAlerta(int idAlerta){
+        String cass = "DELETE FROM Alertas WHERE idSensor = ?;";
         CassandraPool cassandraPool = CassandraPool.getInstance();
         var session = cassandraPool.getSession();
         session.execute(cass, idAlerta);
+    }
+
+    public List<Alerta> checkAlerts() {
+        String cass = "SELECT * FROM Alertas ;";
+        CassandraPool cassandraPool = CassandraPool.getInstance();
+        var session = cassandraPool.getSession();
+        var resultSet= session.execute(cass);
+        List<Alerta> alertas = new ArrayList<>();
+
+        for (Row row : resultSet){
+            Alerta alerta = mappearAlerta(row);
+            alertas.add(alerta);
+        }
+
+        return alertas;
     }
 
     public Alerta mappearAlerta(Row row){
         Alerta alerta = new Alerta();
         if (row != null) {
             alerta.setSensor(new Sensor());
-            alerta.setId(row.getUuid("idAlerta"));
+            alerta.setId(row.getUuid("id"));
 
             Instant instant = row.getInstant("fechayHora");
             if (instant != null) {

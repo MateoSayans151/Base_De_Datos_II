@@ -21,9 +21,12 @@ public class Mensaje {
     private Usuario destinatario;
 
     // Grupo destinatario (si es mensaje grupal)
+    /*
     @ManyToOne
     @JoinColumn(name = "idGrupo")
     private Grupo grupo;
+
+     */
 
     private LocalDateTime fechaEnvio; // Fecha y hora de envío
 
@@ -91,7 +94,10 @@ public class Mensaje {
     public void setTipo(String tipo) {
         this.tipo = tipo;
     }
+    /*
     public int getIdGrupo() {return grupo.getId();}
     public  void setIdGrupo(int idGrupo) {this.grupo.setId(idGrupo);}
+
+     */
 
 }

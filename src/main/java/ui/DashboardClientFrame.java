@@ -2,6 +2,8 @@ package ui;
 
 import javax.swing.*;
 import java.awt.*;
+
+import service.ExecuteService;
 import service.UsuarioService;
 import entity.Usuario;
 import exceptions.*;
@@ -217,22 +219,93 @@ public class DashboardClientFrame extends JFrame {
         p.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
         p.setBackground(new Color(236, 240, 241));
 
-        JLabel title = new JLabel("Ejecutar Servicio");
+        JLabel title = new JLabel("Ejecutar Servicio (MongoDB / Cassandra)");
         title.setFont(new Font("Arial", Font.BOLD, 18));
         p.add(title, BorderLayout.NORTH);
 
-        JPanel center = new JPanel(new BorderLayout());
+        JPanel center = new JPanel(new BorderLayout(10,10));
         center.setBackground(new Color(236, 240, 241));
-        center.add(new JLabel("(Placeholder) Selector de servicio y parámetros"), BorderLayout.CENTER);
 
-    JButton runBtn = new JButton("Iniciar Servicio");
-    // Visual-only: habilitado pero solo muestra tooltip (sin ejecutar lógica)
-    runBtn.setToolTipText("Acción visual: no implementada aún");
+        // Top controls: DB selector and simple instruction
+        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topControls.setBackground(new Color(236, 240, 241));
+        JLabel dbLabel = new JLabel("DB:");
+        String[] dbOptions = {"MongoDB", "Cassandra"};
+        JComboBox<String> dbCombo = new JComboBox<>(dbOptions);
+        dbCombo.setSelectedIndex(0);
+        topControls.add(dbLabel);
+        topControls.add(dbCombo);
+
+        JLabel hint = new JLabel("  Para Mongo: Por favor utilice `find <collection> <filterJson?>`.");
+        hint.setFont(new Font("Arial", Font.PLAIN, 12));
+        topControls.add(hint);
+
+        center.add(topControls, BorderLayout.NORTH);
+
+        // Query input area
+        JTextArea queryArea = new JTextArea(6, 80);
+        queryArea.setLineWrap(true);
+        queryArea.setWrapStyleWord(true);
+        queryArea.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        queryArea.setText("find myCollection {\"field\": \"value\"}");
+        JScrollPane queryScroll = new JScrollPane(queryArea);
+        queryScroll.setBorder(BorderFactory.createTitledBorder("Statement / Command"));
+        center.add(queryScroll, BorderLayout.CENTER);
+
+        // Result area
+        JTextArea resultArea = new JTextArea(12, 80);
+        resultArea.setEditable(false);
+        resultArea.setLineWrap(false);
+        resultArea.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        JScrollPane resultScroll = new JScrollPane(resultArea);
+        resultScroll.setBorder(BorderFactory.createTitledBorder("Result"));
+        resultScroll.setPreferredSize(new Dimension(800, 200)); // ensure visible height
+
+        // Execute button
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottom.add(runBtn);
+        bottom.setBackground(new Color(236, 240, 241));
+        JButton execBtn = new JButton("Execute");
+        execBtn.setToolTipText("Send the statement to the selected database");
+        bottom.add(execBtn);
+
+        // Put result area and button panel into a single southPanel so they don't replace each other
+        JPanel southPanel = new JPanel(new BorderLayout());
+        southPanel.setOpaque(false);
+        southPanel.add(resultScroll, BorderLayout.CENTER);
+        southPanel.add(bottom, BorderLayout.SOUTH);
+
+        center.add(southPanel, BorderLayout.SOUTH);
 
         p.add(center, BorderLayout.CENTER);
-        p.add(bottom, BorderLayout.SOUTH);
+
+        // service that executes queries
+        ExecuteService executeService = new ExecuteService();
+
+        execBtn.addActionListener(e -> {
+            String db = (String) dbCombo.getSelectedItem();
+            String stmt = queryArea.getText();
+            execBtn.setEnabled(false);
+            resultArea.setText("Running...");
+            // run in background
+            new javax.swing.SwingWorker<String, Void>() {
+                @Override
+                protected String doInBackground() {
+                    return executeService.execute(db, stmt);
+                }
+                @Override
+                protected void done() {
+                    try {
+                        String res = get();
+                        resultArea.setText(res);
+                    } catch (Exception ex) {
+                        resultArea.setText("Execution failed: " + ex.getMessage());
+                    } finally {
+                        execBtn.setEnabled(true);
+                    }
+                }
+            }.execute();
+        });
+
         return p;
     }
 

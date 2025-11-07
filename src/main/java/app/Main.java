@@ -5,16 +5,11 @@ import connections.CassandraPool;
 import connections.MongoPool;
 import connections.RedisPool;
 import connections.SQLPool;
-import entity.Medicion;
-import entity.Rol;
-import entity.Sensor;
-import entity.Usuario;
+import entity.*;
 import exceptions.ErrorConectionMongoException;
 import repository.mongo.RolRepository;
 import repository.redis.InicioSesionRepository;
-import service.MedicionService;
-import service.SensorService;
-import service.UsuarioService;
+import service.*;
 import ui.WelcomeFrame;
 
 
@@ -23,6 +18,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
@@ -82,11 +78,85 @@ public class Main {
         }
 
 
-        CassandraPool.close();
+
         mongoPool.close();
 
         System.out.println("Conexiones cerradas correctamente.");
 
-*/
+
+        CassandraPool cassandraPool = CassandraPool.getInstance();
+        SensorService sensorService = new SensorService();
+        AlertaService alertaService = new AlertaService();
+        Alerta newAlerta = new Alerta();
+        Sensor newSensor = sensorService.getSensor(23);
+        newAlerta.setSensor(newSensor);
+        newAlerta.setEstado("Activa");
+        newAlerta.setDescripcion("Anda mal el sensor");
+        newAlerta.setFecha(LocalDateTime.now());
+        alertaService.create(newAlerta);
+        List<Alerta> alertas =alertaService.checkAlerts();
+        for (Alerta alerta : alertas) {
+            System.out.println("Alerta obtenida:\n " + "ID Alerta: "+ alerta.getSensor().getCod() + " \n " + "Descripcion: "+alerta.getDescripcion()+ " \n " + "Fecha: "+alerta.getFecha());
+        }
+        alertaService.delete(newSensor.getId());
+        System.out.println(alertaService.checkAlerts());
+        CassandraPool.close();
+
+    }
+
+
+        UsuarioService usuarioService = new UsuarioService();
+        Usuario remitente = usuarioService.getById(1);
+        Usuario destinatario = usuarioService.getById(2);
+        MensajeService mensajeService = new MensajeService();
+        Mensaje mensaje = new Mensaje();
+        mensaje.setFechaEnvio(LocalDateTime.now());
+        mensaje.setContenido("Mensaje de prueba");
+        mensaje.setTipo("privado");
+        mensaje.setRemitente(remitente);
+        mensaje.setDestinatario(destinatario);
+        mensaje.setId(1);
+        mensajeService.createMensaje(mensaje);
+        System.out.println("Mensaje del Remitente: ");
+        List<Mensaje> mensajesRemitente = mensajeService.getMensajesPorRemitente(remitente.getId());
+        for (Mensaje m : mensajesRemitente) {
+            System.out.println("ID: " + m.getId() + ", Contenido: " + m.getContenido() + ", Destinatario: " + m.getDestinatario().getNombre());
+        }
+        System.out.println("Mensaje recibido por el Destinatario: ");
+        List<Mensaje> mensajesDestinatario = mensajeService.getMensajesPorDestinatario(destinatario.getId());
+        for (Mensaje m : mensajesDestinatario) {
+            System.out.println("ID: " + m.getId() + ", Contenido: " + m.getContenido() + ", Remitente: " + m.getRemitente().getNombre());
+        }
+
+
+        List<Usuario> usuarios = new ArrayList<>();
+        UsuarioService usuarioService = new UsuarioService();
+        Usuario get1 = usuarioService.getById(1);
+        Usuario get2 = usuarioService.getById(2);
+        usuarios.add(get1);
+        usuarios.add(get2);
+
+        GrupoService grupoService = new GrupoService();
+        Grupo grupo = new Grupo();
+        grupo.setNombre("Grupo 1");
+        grupo.setMiembros(usuarios);
+        //grupoService.createGroup(grupo);
+        System.out.println("Grupo creado: " + grupo.getNombre());
+        Mensaje mensaje = new Mensaje();
+        mensaje.setId(1);
+        mensaje.setContenido("Hola a todos!");
+        mensaje.setFechaEnvio(LocalDateTime.now());
+        mensaje.setRemitente(get1);
+        mensaje.setTipo("grupal");
+        //grupoService.addMessageToGroup(grupo.getId(), mensaje);
+        System.out.println("Mensaje agregado al grupo: " + mensaje.getContenido());
+
+        List<Mensaje> mensajesDelGrupo = grupoService.getMessagesFromGroup(grupo.getId());
+        System.out.println("Mensajes del grupo " + grupo.getNombre() + ":");
+        for (Mensaje m : mensajesDelGrupo) {
+            System.out.println("ID: " + m.getId() + ", Contenido: " + m.getContenido());
+        }
+
+         */
     }
 }
