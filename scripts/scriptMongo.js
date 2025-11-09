@@ -139,6 +139,18 @@ db.createCollection('grupo', {
               estado: { enum: ['activo', 'inactivo'] }
             }
           }
+        },
+        mensajes:{
+            bsonType: 'array',
+            items: {
+                bsonType: 'object',
+                required: ['idMensaje', 'contenido', 'fechaEnvio'],
+                properties: {
+                    idMensaje: {bsonType: 'int'},
+                    contenido: {bsonType: 'string'},
+                    fechaEnvio: {bsonType: 'date'}
+                }
+            }
         }
       }
     }
@@ -173,8 +185,7 @@ db.createCollection('mensajes', {
         },
         contenido: { bsonType: 'string' },
         fechaEnvio: { bsonType: 'date' },
-        tipo: { enum: ['privado', 'grupal'] },
-        idGrupo: { bsonType: 'int' }
+        tipo: { enum: ['privado', 'grupal'] }
       }
     }
   }

@@ -36,8 +36,9 @@ CREATE TABLE Pagos (
 
 CREATE TABLE CuentaCorriente (
      id BIGINT PRIMARY KEY AUTO_INCREMENT,
-     idUsuario INT NOT NULL UNIQUE,
-     saldo DECIMAL(18,2) NOT NULL DEFAULT 0.00
+     usuario_id INT NOT NULL UNIQUE,
+     saldo DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+     FOREIGN KEY (usuario_id) REFERENCES Usuario(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 

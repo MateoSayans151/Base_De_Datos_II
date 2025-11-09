@@ -44,19 +44,86 @@ public class MedicionService {
     }
 
     // OBTENER MEDICIONES EN UN RANGO DE FECHAS
-/*
-    public List<Medicion> getByFechaAndCountryBetween(LocalDateTime from, LocalDateTime until, String country,String city, String state) {
+
+    public Double getMinByCity(String city) throws ErrorConectionMongoException {
+        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
         List<Medicion> measurements = new ArrayList<>();
-        List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(from, until);
-        for (Medicion m : measurementsRange) {
-            if (m.getSensor().getCiudad().equalsIgnoreCase(country)) {
-                measurements.add(m);
+        for (Sensor sensor : sensors) {
+            List<Medicion> mess = repo.getMeasurements();
+            for (Medicion m : mess) {
+                if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
+                    measurements.add(m);
+                }
+
             }
         }
-        return measurements;
+        Double minTemp = measurements.stream()
+                .mapToDouble(Medicion::getTemperatura)
+                .min()
+                .orElse(Double.NaN);
+
+        return minTemp;
     }
-*/
-    public Double getAverageHumidityBetweenDates(String city, LocalDateTime from, LocalDateTime until) throws ErrorConectionMongoException {
+    public Double getMaxByCity(String city) throws ErrorConectionMongoException {
+        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
+        List<Medicion> measurements = new ArrayList<>();
+        for (Sensor sensor : sensors) {
+            List<Medicion> mess = repo.getMeasurements();
+            for (Medicion m : mess) {
+                if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
+                    measurements.add(m);
+                }
+
+            }
+        }
+        Double maxTemp = measurements.stream()
+                .mapToDouble(Medicion::getTemperatura)
+                .max()
+                .orElse(Double.NaN);
+
+        return maxTemp;
+    }
+    public Double getMinByCountry(String city) throws ErrorConectionMongoException {
+        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
+        List<Medicion> measurements = new ArrayList<>();
+        for (Sensor sensor : sensors) {
+            List<Medicion> mess = repo.getMeasurements();
+            for (Medicion m : mess) {
+                if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
+                    measurements.add(m);
+                }
+
+            }
+        }
+        Double minTemp = measurements.stream()
+                .mapToDouble(Medicion::getTemperatura)
+                .min()
+                .orElse(Double.NaN);
+
+        return minTemp;
+    }
+    public Double getMaxByCountry(String city) throws ErrorConectionMongoException {
+        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
+        List<Medicion> measurements = new ArrayList<>();
+        for (Sensor sensor : sensors) {
+            List<Medicion> mess = repo.getMeasurements();
+            for (Medicion m : mess) {
+                if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
+                    measurements.add(m);
+                }
+
+            }
+        }
+        Double maxTemp = measurements.stream()
+                .mapToDouble(Medicion::getTemperatura)
+                .max()
+                .orElse(Double.NaN);
+
+        return maxTemp;
+    }
+
+
+    public Double getAverageHumidityBetweenDatesByCity(String city, LocalDateTime from, LocalDateTime until) throws ErrorConectionMongoException {
         List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
         List<Medicion> measurements = new ArrayList<>();
         for (Sensor sensor : sensors) {
@@ -78,7 +145,7 @@ public class MedicionService {
 
         return avgHum;
     }
-    public Double getAverageTemperatureBetweenDates(String city, LocalDateTime from, LocalDateTime until) throws ErrorConectionMongoException {
+    public Double getAverageTemperatureBetweenDatesByCity(String city, LocalDateTime from, LocalDateTime until) throws ErrorConectionMongoException {
         List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
         List<Medicion> measurements = new ArrayList<>();
         for (Sensor sensor : sensors) {
@@ -97,5 +164,47 @@ public class MedicionService {
                 .orElse(0.0);
         return avgTemp;
     }
+    public Double getAverageHumidityBetweenDatesByCountry(String country, LocalDateTime from, LocalDateTime until) throws ErrorConectionMongoException {
+        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(country);
+        List<Medicion> measurements = new ArrayList<>();
+        for (Sensor sensor : sensors) {
+            List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(sensor.getId(),from, until);
+            for (Medicion m : measurementsRange) {
+                if (m.getSensor().getCiudad().equalsIgnoreCase(country)) {
+                    measurements.add(m);
+                }
+
+
+            }
+        }
+
+        var avgHum = measurements.stream()
+                .mapToDouble(mes -> mes.getHumedad())
+                .average()
+                .orElse(0.0);
+
+
+        return avgHum;
+    }
+    public Double getAverageTemperatureBetweenDatesByCountry(String country, LocalDateTime from, LocalDateTime until) throws ErrorConectionMongoException {
+        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(country);
+        List<Medicion> measurements = new ArrayList<>();
+        for (Sensor sensor : sensors) {
+            List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(sensor.getId(),from, until);
+            for (Medicion m : measurementsRange) {
+                if (m.getSensor().getCiudad().equalsIgnoreCase(country)) {
+                    measurements.add(m);
+                }
+
+
+            }
+        }
+        var avgTemp = measurements.stream()
+                .mapToDouble(mes -> mes.getTemperatura())
+                .average()
+                .orElse(0.0);
+        return avgTemp;
+    }
+
 }
 

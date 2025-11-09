@@ -1,6 +1,9 @@
 package entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 @Entity
 public class CuentaCorriente {
@@ -8,27 +11,20 @@ public class CuentaCorriente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
-    @Column(name = "numero_cuenta", nullable = false, unique = true)
-    private String numeroCuenta;
-
-    @Column(nullable = false)
+    
+    private int usuarioId;
+    
     private Double saldo;
 
-    // 🔹 Relación con Usuario
-    @ManyToOne(optional = false) // cada cuenta pertenece a un usuario
-    @JoinColumn(name = "usuario_id", referencedColumnName = "id")
-    private Usuario usuario;
-
-    public CuentaCorriente() { }
-
-    public CuentaCorriente(String numeroCuenta, Double saldo, Usuario usuario) {
-        this.numeroCuenta = numeroCuenta;
-        this.saldo = saldo;
-        this.usuario = usuario;
+    public CuentaCorriente() { 
+        this.saldo = 0.0;
     }
 
-    // --- Getters y Setters ---
+    public CuentaCorriente(int usuarioId) {
+        this.usuarioId = usuarioId;
+        this.saldo = 0.0;
+    }
+
     public int getId() {
         return id;
     }
@@ -37,12 +33,12 @@ public class CuentaCorriente {
         this.id = id;
     }
 
-    public String getNumeroCuenta() {
-        return numeroCuenta;
+    public int getUsuarioId() {
+        return usuarioId;
     }
 
-    public void setNumeroCuenta(String numeroCuenta) {
-        this.numeroCuenta = numeroCuenta;
+    public void setUsuarioId(int usuarioId) {
+        this.usuarioId = usuarioId;
     }
 
     public Double getSaldo() {
@@ -52,13 +48,4 @@ public class CuentaCorriente {
     public void setSaldo(Double saldo) {
         this.saldo = saldo;
     }
-
-    public Usuario getUsuario() {
-        return usuario;
-    }
-
-    public void setUsuario(Usuario usuario) {
-        this.usuario = usuario;
-    }
 }
-

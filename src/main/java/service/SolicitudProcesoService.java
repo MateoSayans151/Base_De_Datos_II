@@ -14,6 +14,7 @@ import exceptions.ErrorConectionMongoException; // <-- importa tu excepción
 import jakarta.transaction.Transactional;
 import repository.mongo.HistorialEjecucionRepository;
 import repository.mongo.SolicitudProcesoRepository;
+
 @Service
 public class SolicitudProcesoService {
 
@@ -143,5 +144,6 @@ public class SolicitudProcesoService {
             throw new RuntimeException("Mongo: error al marcar como completado id=" + id, e);
         }
     }
+
 }
 

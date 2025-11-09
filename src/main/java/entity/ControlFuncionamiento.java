@@ -8,32 +8,32 @@ public class ControlFuncionamiento {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int idControl;
+    private int id;
 
     @ManyToOne
     @JoinColumn(name = "sensor_id")
     private Sensor sensor;  // Relación con la entidad Sensor
 
-    private LocalDate fechaRevision;
-    private String estadoSensor;
+    private LocalDate fechaControl;
+    private String estado;
     private String observaciones;
-
+    //['id', 'sensor', 'fechaControl', 'estado', 'obvservaciones'],
     public ControlFuncionamiento() {}
 
-    public ControlFuncionamiento(Sensor sensor, LocalDate fechaRevision, String estadoSensor, String observaciones) {
+    public ControlFuncionamiento(Sensor sensor, LocalDate fechaControl, String estado, String observaciones) {
         this.sensor = sensor;
-        this.fechaRevision = fechaRevision;
-        this.estadoSensor = estadoSensor;
+        this.fechaControl = fechaControl;
+        this.estado = estado;
         this.observaciones = observaciones;
     }
 
     // Getters y Setters
-    public int getIdControl() {
-        return idControl;
+    public int getId() {
+        return id;
     }
 
-    public void setIdControl(int idControl) {
-        this.idControl = idControl;
+    public void setId(int id) {
+        this.id = id;
     }
 
     public Sensor getSensor() {
@@ -44,20 +44,20 @@ public class ControlFuncionamiento {
         this.sensor = sensor;
     }
 
-    public LocalDate getFechaRevision() {
-        return fechaRevision;
+    public LocalDate getFechaControl() {
+        return fechaControl;
     }
 
-    public void setFechaRevision(LocalDate fechaRevision) {
-        this.fechaRevision = fechaRevision;
+    public void setFechaControl(LocalDate fechaControl) {
+        this.fechaControl = fechaControl;
     }
 
-    public String getEstadoSensor() {
-        return estadoSensor;
+    public String getEstado() {
+        return estado;
     }
 
-    public void setEstadoSensor(String estadoSensor) {
-        this.estadoSensor = estadoSensor;
+    public void setEstado(String estado) {
+        this.estado = estado;
     }
 
     public String getObservaciones() {

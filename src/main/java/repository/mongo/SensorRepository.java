@@ -29,7 +29,7 @@ public  class SensorRepository {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         try {
-            var collection = connection.getCollection("sensores");
+            var collection = connection.getCollection(COLLECTION_NAME);
             Document newSensor = new Document()
                     .append("id", sensor.getId())
                     .append("cod", sensor.getCod())
@@ -45,7 +45,7 @@ public  class SensorRepository {
             collection.insertOne(newSensor);
 
         } catch (Exception e) {
-            throw new ErrorConectionMongoException("Error al guardar el sensor en MongoDB");
+            throw new ErrorConectionMongoException("Error al guardar el sensor en MongoDB" + e.getMessage());
         }
     }
     public Sensor getSensor(int idSensor) throws ErrorConectionMongoException {
@@ -112,6 +112,27 @@ public  class SensorRepository {
             throw new RuntimeException(e);
         }
         return  sensors;
+    }
+    public List<Sensor> getAllSensors() throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        var collection = connection.getCollection(COLLECTION_NAME);
+        List<Sensor> sensors = new java.util.ArrayList<>();
+
+        try {
+            var resultSet = collection.find();
+
+            while (resultSet.iterator().hasNext()) {
+                Document result = resultSet.iterator().next();
+                Sensor sensor = mapSensor(result);
+                sensors.add(sensor);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return sensors;
     }
 
     public Sensor mapSensor(Document doc){

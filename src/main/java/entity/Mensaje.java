@@ -5,32 +5,31 @@ import java.time.LocalDateTime;
 
 @Entity
 public class Mensaje {
-
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id; // idMensaje de mensaje
+    private int id;
 
-    // Usuario que envía el mensaje
     @ManyToOne
-    @JoinColumn(name = "remitente_id", nullable = false)
+    @JoinColumn(name = "remitente_id")
     private Usuario remitente;
 
-    // Usuario destinatario (si es mensaje privado)
     @ManyToOne
-    @JoinColumn(name = "destinatario_idMensaje")
+    @JoinColumn(name = "destinatario_id")
     private Usuario destinatario;
 
-    // Grupo destinatario (si es mensaje grupal)
     @ManyToOne
-    @JoinColumn(name = "idGrupo")
+    @JoinColumn(name = "grupo_id")
     private Grupo grupo;
 
-    private LocalDateTime fechaEnvio; // Fecha y hora de envío
+    @Column(name = "fecha_envio")
+    private LocalDateTime fechaEnvio;
 
     @Column(columnDefinition = "TEXT")
-    private String contenido; // Texto del mensaje
+    private String contenido;
 
-    private String tipo; // "privado" o "grupal"
+    @Column(length = 20)
+    private String tipo;
 
     public Mensaje() {}
 
@@ -42,13 +41,12 @@ public class Mensaje {
         this.fechaEnvio = LocalDateTime.now();
     }
 
-    // --- Getters y Setters ---
     public int getId() {
         return id;
     }
 
-    public void setId(int idMensaje) {
-        this.id = idMensaje;
+    public void setId(int id) {
+        this.id = id;
     }
 
     public Usuario getRemitente() {
@@ -67,6 +65,13 @@ public class Mensaje {
         this.destinatario = destinatario;
     }
 
+    public Grupo getGrupo() {
+        return grupo;
+    }
+
+    public void setGrupo(Grupo grupo) {
+        this.grupo = grupo;
+    }
 
     public LocalDateTime getFechaEnvio() {
         return fechaEnvio;
@@ -91,7 +96,4 @@ public class Mensaje {
     public void setTipo(String tipo) {
         this.tipo = tipo;
     }
-    public int getIdGrupo() {return grupo.getId();}
-    public  void setIdGrupo(int idGrupo) {this.grupo.setId(idGrupo);}
-
 }

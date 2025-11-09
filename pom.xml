@@ -131,5 +131,20 @@
             <version>5.1.0</version>
         </dependency>
     </dependencies>
+
+    <build>
+    <plugins>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.6.2</version>
+            <configuration>
+                <!-- Use the fully-qualified class name (package + class). Remove the .java extension -->
+                <mainClass>app.Main</mainClass>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+
   
 </project>

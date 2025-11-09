@@ -1,90 +1,137 @@
 package service;
 
+import connections.SQLPool;
 import entity.CuentaCorriente;
-import entity.Usuario;
-import exceptions.ErrorConectionMongoException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import repository.mongo.UsuarioRepository;        
-import repository.sql.CuentaCorrienteRepository;     
+import repository.sql.CuentaCorrienteRepository;
 
-import java.util.List;
-import java.util.Optional;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 @Service
 public class CuentaCorrienteService {
 
-    private final CuentaCorrienteRepository cuentaCorrienteRepository;
-    private final UsuarioRepository usuarioRepository;
+    @Autowired
+    private CuentaCorrienteRepository cuentaCorrienteRepository;
 
-    public CuentaCorrienteService(CuentaCorrienteRepository cuentaCorrienteRepository,
-                                  UsuarioRepository usuarioRepository) {
-        this.cuentaCorrienteRepository = cuentaCorrienteRepository;
-        this.usuarioRepository = usuarioRepository;
+    public void createCuentaCorriente(CuentaCorriente cuenta) {
+        if (cuentaCorrienteRepository != null) {
+            cuentaCorrienteRepository.save(cuenta);
+        } else {
+            saveCuentaJdbc(cuenta);
+        }
     }
 
-    /* =========================== LISTAR =========================== */
-    public List<CuentaCorriente> getAll() {
-        return cuentaCorrienteRepository.findAll();
+    public CuentaCorriente getCuentaByUsuarioId(int usuarioId) {
+        if (cuentaCorrienteRepository != null) {
+            return cuentaCorrienteRepository.findByUsuarioId(usuarioId);
+        } else {
+            return getCuentaByUsuarioJdbc(usuarioId);
+        }
     }
 
-    public Optional<CuentaCorriente> getById(int id) {
-        return cuentaCorrienteRepository.findById(id);
-    }
-
-    public List<CuentaCorriente> getByUsuarioId(int usuarioId) {
-        return cuentaCorrienteRepository.findByUsuario_Id(usuarioId);
-    }
-
-    public CuentaCorriente getByNumeroCuenta(String numero) {
-        return cuentaCorrienteRepository.findByNumeroCuenta(numero);
-    }
-
-    /* =========================== CREAR =========================== */
-    public CuentaCorriente create(CuentaCorriente cuentaCorriente, int usuarioId) {
-        try {
-            Usuario usuario = usuarioRepository.getUserById(usuarioId);
-            // Tu repo retorna Usuario "vacío" si no existe => chequeo id==0
-            if (usuario == null || usuario.getId() == 0) {
-                throw new RuntimeException("No existe usuario con ID " + usuarioId);
+    public void actualizarSaldo(int usuarioId, double nuevoSaldo) {
+        CuentaCorriente cuenta = getCuentaByUsuarioId(usuarioId);
+        if (cuenta != null) {
+            cuenta.setSaldo(nuevoSaldo);
+            if (cuentaCorrienteRepository != null) {
+                cuentaCorrienteRepository.save(cuenta);
+            } else {
+                saveCuentaJdbc(cuenta);
             }
-            cuentaCorriente.setUsuario(usuario);
-            return cuentaCorrienteRepository.save(cuentaCorriente);
-        } catch (ErrorConectionMongoException e) {
-            throw new RuntimeException("Mongo: error obteniendo usuario " + usuarioId, e);
         }
     }
 
-    /* =========================== ACTUALIZAR =========================== */
-    public CuentaCorriente update(int id, CuentaCorriente nuevaCuenta, Integer nuevoUsuarioId) {
-        Optional<CuentaCorriente> cuentaOpt = cuentaCorrienteRepository.findById(id);
-        if (cuentaOpt.isEmpty()) {
-            throw new RuntimeException("No existe cuenta con ID " + id);
+    public double consultarSaldo(int usuarioId) {
+        CuentaCorriente cuenta = getCuentaByUsuarioId(usuarioId);
+        if (cuenta != null && cuenta.getSaldo() != null) {
+            return cuenta.getSaldo();
         }
+        return 0.0;
+    }
 
-        CuentaCorriente cuenta = cuentaOpt.get();
-        cuenta.setNumeroCuenta(nuevaCuenta.getNumeroCuenta());
-        cuenta.setSaldo(nuevaCuenta.getSaldo());
+    public void agregarFondos(int usuarioId, double monto) {
+        System.out.println("Agregando fondos: " + monto + " para usuario: " + usuarioId);
+        CuentaCorriente cuenta = getCuentaByUsuarioId(usuarioId);
+        if (cuenta != null) {
+            System.out.println("Cuenta encontrada, saldo actual: " + cuenta.getSaldo());
+            double nuevoSaldo = (cuenta.getSaldo() == null ? 0.0 : cuenta.getSaldo()) + monto;
+            System.out.println("Nuevo saldo calculado: " + nuevoSaldo);
+            actualizarSaldo(usuarioId, nuevoSaldo);
+        } else {
+            System.out.println("Cuenta no encontrada, creando nueva");
+            // Si no existe cuenta, crear una nueva con el saldo inicial
+            CuentaCorriente nueva = new CuentaCorriente(usuarioId);
+            nueva.setSaldo(monto);
+            createCuentaCorriente(nueva);
+        }
+    }
 
-        if (nuevoUsuarioId != null) {
-            try {
-                Usuario usuario = usuarioRepository.getUserById(nuevoUsuarioId);
-                if (usuario == null || usuario.getId() == 0) {
-                    throw new RuntimeException("No existe usuario con ID " + nuevoUsuarioId);
+    public void retirarFondos(int usuarioId, Double monto) {
+        CuentaCorriente cuenta = getCuentaByUsuarioId(usuarioId);
+        if (cuenta != null) {
+            double saldoActual = cuenta.getSaldo() == null ? 0.0 : cuenta.getSaldo();
+            if (saldoActual >= monto) {
+                double nuevoSaldo = saldoActual - monto;
+                actualizarSaldo(usuarioId, nuevoSaldo);
+            } else {
+                throw new IllegalStateException("Saldo insuficiente");
+            }
+        } else {
+            throw new IllegalStateException("El usuario no tiene cuenta corriente");
+        }
+    }
+
+    // --- JDBC fallbacks when not running inside Spring context ---
+    private CuentaCorriente getCuentaByUsuarioJdbc(int usuarioId) {
+        String sql = "SELECT id, saldo FROM CuentaCorriente WHERE idUsuario = ?";
+        try (Connection c = SQLPool.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, usuarioId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    CuentaCorriente cuenta = new CuentaCorriente(usuarioId);
+                    cuenta.setId(rs.getInt("id"));
+                    cuenta.setSaldo(rs.getDouble("saldo"));
+                    return cuenta;
                 }
-                cuenta.setUsuario(usuario);
-            } catch (ErrorConectionMongoException e) {
-                throw new RuntimeException("Mongo: error obteniendo usuario " + nuevoUsuarioId, e);
             }
+        } catch (SQLException e) {
+            // log and ignore, return null to indicate not found
+            System.err.println("Error JDBC getCuentaByUsuario: " + e.getMessage());
         }
-
-        return cuentaCorrienteRepository.save(cuenta);
+        return null;
     }
 
-    /* =========================== ELIMINAR =========================== */
-    public void delete(int id) {
-        if (!cuentaCorrienteRepository.existsById(id)) {
-            throw new RuntimeException("No existe cuenta corriente con ID " + id);
+    private void saveCuentaJdbc(CuentaCorriente cuenta) {
+        System.out.println("Guardando cuenta via JDBC para usuario: " + cuenta.getUsuarioId());
+        // Try update first
+        String updateSql = "UPDATE CuentaCorriente SET saldo = ? WHERE idUsuario = ?";
+        String insertSql = "INSERT INTO CuentaCorriente (idUsuario, saldo) VALUES (?, ?)";
+        try (Connection c = SQLPool.getInstance().getConnection();
+             PreparedStatement psUpdate = c.prepareStatement(updateSql)) {
+            double saldoToSave = cuenta.getSaldo() == null ? 0.0 : cuenta.getSaldo();
+            System.out.println("Intentando actualizar saldo a: " + saldoToSave);
+            psUpdate.setDouble(1, saldoToSave);
+            psUpdate.setInt(2, cuenta.getUsuarioId());
+            int updated = psUpdate.executeUpdate();
+            System.out.println("Filas actualizadas: " + updated);
+            if (updated == 0) {
+                System.out.println("No se actualizó ninguna fila, intentando insertar");
+                try (PreparedStatement psInsert = c.prepareStatement(insertSql)) {
+                    psInsert.setInt(1, cuenta.getUsuarioId());
+                    psInsert.setDouble(2, saldoToSave);
+                    psInsert.executeUpdate();
+                    System.out.println("Nueva cuenta insertada correctamente");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error JDBC saveCuenta: " + e.getMessage());
+            e.printStackTrace();
         }
-        cuentaCorrienteRepository.deleteById(id);
     }
 }
+

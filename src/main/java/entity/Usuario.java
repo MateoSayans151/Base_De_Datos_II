@@ -26,7 +26,7 @@ public class Usuario {
         this.nombre = nombre;
         this.mail = email;
         this.contrasena = contrasena;
-        this.estado = "activo";
+        this.estado = "Activo";
         this.rol = rol;
         this.fechaRegistro = LocalDateTime.now();
     }

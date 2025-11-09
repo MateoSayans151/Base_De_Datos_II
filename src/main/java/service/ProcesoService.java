@@ -14,13 +14,9 @@ import repository.cassandra.MedicionRepository;
 import repository.mongo.ProcesoRepository;
 import repository.mongo.SolicitudProcesoRepository;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Collections;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
 
 @Service
 public class ProcesoService {
@@ -56,6 +52,7 @@ public class ProcesoService {
     public Factura asignarUltimaSolicitudYEmitirFactura(Usuario tecnico, Medicion medicion) {
         if (tecnico == null) throw new IllegalArgumentException("Usuario tecnico no puede ser nulo");
         // validar rol 'tecnico' usando getRol() (admite entity.Rol o String)
+        /* Esto lo podés sacar si querés porque solo el técnico va a poder llamar a esta funcion. Encima el rol en la base es Tecnico,Admin y Cliente. Con la primera letra mayúscula
         boolean esTecnico = false;
         try {
             Object rolObj = tecnico.getRol();
@@ -67,9 +64,10 @@ public class ProcesoService {
                     esTecnico = r.getNombre() != null && r.getNombre().equalsIgnoreCase("tecnico");
                 }
             }
-        } catch (Throwable t) { /* ignorar errores de reflexión */ }
+        } catch (Throwable t) { /* ignorar errores de reflexión  }
+    */
 
-        if (!esTecnico) throw new SecurityException("Solo usuarios con rol 'tecnico' pueden asignar mediciones");
+        if (!tecnico.getRol().getNombre().equals("Tecnico")) throw new SecurityException("Solo usuarios con rol 'tecnico' pueden asignar mediciones"); // Encima acá ya estás validando que sea tecnico u algo distinto
 
         try {
             // obtener la última solicitud pendiente
@@ -82,6 +80,75 @@ public class ProcesoService {
             // insertar la medición en Cassandra (se asume que 'medicion' ya viene con sensor/fecha adecuados)
             MedicionRepository medRepo = MedicionRepository.getInstance();
             medRepo.insertMeasurement(medicion);
+
+            // actualizar la solicitud a completado y guardarla
+            solicitud.setEstado("completado");
+            SolicitudProceso saved = solicitudRepo.save(solicitud);
+
+            // crear la factura para el usuario que hizo la solicitud
+            Proceso proceso = saved.getProceso();
+            Double total = (proceso != null) ? proceso.getCosto() : 0.0;
+            Factura factura = new Factura(
+                    saved.getUsuario(),
+                    LocalDate.now(),
+                    "pendiente", // estado inicial de la factura
+                    (proceso != null) ? Collections.singletonList(proceso) : Collections.emptyList(),
+                    total
+            );
+
+            // TODO: persistir factura si tenés un repositorio/DAO de Factura (p. ej. facturaRepo.save(factura))
+            return factura;
+        } catch (ErrorConectionMongoException e) {
+            throw new RuntimeException("Mongo: error al procesar solicitud/factura", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al asignar medición y emitir factura: " + e.getMessage(), e);
+        }
+    }
+    /*
+    * Podremos suponer que marcos en la ventana de solicitudes marcos va a mostrar las solicitudes pendientes y el técnico va a seleccionar una para cambiarle el estado a rechazada o completada.
+    * Entonces lo que podríamos hacer es que una vez que el tecnico sellecione la solicitud y le de a un boton de "completar solicitud" se llame a este método pasandole la solicitud seleccionada y el rol del tecnico.
+    * */
+
+    @Transactional
+    public Factura ejectuarSolicitudYEmitirFactura(Usuario tecnico, SolicitudProceso solicitud,String ubicacion) {
+        if (tecnico == null) throw new IllegalArgumentException("Usuario tecnico no puede ser nulo");
+        MedicionService medicionService = MedicionService.getInstance();
+
+        if (!tecnico.getRol().getNombre().equals("Tecnico")) throw new SecurityException("Solo usuarios con rol 'tecnico' pueden asignar mediciones"); // Encima acá ya estás validando que sea tecnico u algo distinto
+
+        try {
+            // obtener la última solicitud pendiente
+            List<SolicitudProceso> pendientes = solicitudRepo.findByEstadoIgnoreCase("pendiente");
+            if (pendientes == null || pendientes.isEmpty())
+                throw new RuntimeException("No hay solicitudes pendientes");
+
+            int idProceso = solicitud.getProceso().getId();
+
+            if(idProceso == 1){
+                Double min = medicionService.getMinByCity(ubicacion);
+                Double max = medicionService.getMaxByCity(ubicacion);
+                solicitud.getProceso().setDescripcion("Se obtuvieron las siguientes mediciones en la ciudad de " + ubicacion + ": \n Minima = " + min + " \n Maxima = " + max);
+
+            }else if(idProceso == 2){
+                Double min = medicionService.getMinByCountry(ubicacion);
+                Double max = medicionService.getMaxByCountry(ubicacion);
+                solicitud.getProceso().setDescripcion("Se obtuvieron las siguientes mediciones en el país de " + ubicacion + ": \n Minima = " + min + " \n Maxima = " + max);
+
+            }else if(idProceso == 3){
+                Double hum = medicionService.getAverageHumidityBetweenDatesByCity(ubicacion, LocalDate.now().minusDays(7).atStartOfDay(), LocalDate.now().atStartOfDay());
+                Double temp = medicionService.getAverageTemperatureBetweenDatesByCity(ubicacion, LocalDate.now().minusDays(7).atStartOfDay(), LocalDate.now().atStartOfDay());
+                solicitud.getProceso().setDescripcion("Se obtuvo la siguiente medicion promedio en la ciudad de " + ubicacion + ":\n Promedio Temperatura = " + temp + " \n Promedio Humedad = " + hum);
+            } else if (idProceso == 4) {
+                Double hum = medicionService.getAverageHumidityBetweenDatesByCountry(ubicacion, LocalDate.now().minusDays(7).atStartOfDay(), LocalDate.now().atStartOfDay());
+                Double temp = medicionService.getAverageTemperatureBetweenDatesByCountry(ubicacion, LocalDate.now().minusDays(7).atStartOfDay(), LocalDate.now().atStartOfDay());
+                solicitud.getProceso().setDescripcion("Se obtuvo la siguiente medicion promedio en el país de " + ubicacion + ":\n Promedio Temperatura = " + temp + " \n Promedio Humedad = " + hum);
+
+            } else{
+                throw new RuntimeException("El id del proceso no es valido");
+            }
+
+
+
 
             // actualizar la solicitud a completado y guardarla
             solicitud.setEstado("completado");

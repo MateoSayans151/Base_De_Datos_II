@@ -29,6 +29,7 @@ pais text,
 estado text,
 fechayHora timestamp,
 descripcion text,
-PRIMARY KEY((id),idSensor,fechayHora)
+estadoAlerta text,
+PRIMARY KEY(idSensor,fechayHora)
 );
 

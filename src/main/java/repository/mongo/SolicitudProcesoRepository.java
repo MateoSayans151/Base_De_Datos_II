@@ -22,7 +22,7 @@ import java.util.Optional;
 public class SolicitudProcesoRepository {
 
     private static SolicitudProcesoRepository instance;
-    private static final String COLLECTION_NAME = "solicitud_proceso";
+    private static final String COLLECTION_NAME = "solicitudProceso";
     private static final String COUNTERS_COLLECTION = "counters";
     private static final String COUNTER_KEY = "solicitud_proceso_seq";
 
@@ -202,7 +202,7 @@ public class SolicitudProcesoRepository {
 
         // Rehidratar Proceso
         if (procesoId != null) {
-            Proceso p = procesoRepo.obtenerProceso((procesoId));
+            Proceso p = procesoRepo.obtenerProceso(procesoId);
             if (p != null)
                 s.setProceso(p);
         }
