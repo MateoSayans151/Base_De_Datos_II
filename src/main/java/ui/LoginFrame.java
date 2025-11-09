@@ -18,6 +18,7 @@ import java.util.Optional;
 public class LoginFrame extends JFrame {
     private JTextField emailField;
     private JPasswordField passwordField;
+    private JComboBox<String> roleComboBox;
     private JButton loginButton;
     private JButton registerButton;
     private String currentToken;
@@ -58,7 +59,7 @@ public class LoginFrame extends JFrame {
         gbc.gridx = 1;
         panel.add(emailField, gbc);
 
-        // Password
+    // Password
         gbc.gridx = 0;
         gbc.gridy = 2;
         panel.add(new JLabel("Password:"), gbc);
@@ -66,10 +67,18 @@ public class LoginFrame extends JFrame {
         gbc.gridx = 1;
         panel.add(passwordField, gbc);
 
-        // Botones
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.gridwidth = 2;
+    // Role selection (used during registration)
+    gbc.gridx = 0;
+    gbc.gridy = 3;
+    panel.add(new JLabel("Role:"), gbc);
+    roleComboBox = new JComboBox<>(new String[]{"Cliente", "Admin", "Tecnico"});
+    gbc.gridx = 1;
+    panel.add(roleComboBox, gbc);
+
+    // Botones
+    gbc.gridx = 0;
+    gbc.gridy = 4;
+    gbc.gridwidth = 2;
         JPanel buttonPanel = new JPanel();
         buttonPanel.setBackground(new Color(240, 240, 240));
 
@@ -132,9 +141,20 @@ public class LoginFrame extends JFrame {
         }
 
         try {
-            Rol role = RolService.getInstance().getRolByName("Cliente");
+            String selectedRoleName = (String) roleComboBox.getSelectedItem();
+            Rol role = RolService.getInstance().getRolByName(selectedRoleName);
+            // If role does not exist in DB, create it (RolService will insert into Mongo)
+            if (role == null) {
+                RolService.getInstance().createRol(selectedRoleName);
+                role = RolService.getInstance().getRolByName(selectedRoleName);
+            }
 
-            Usuario newUser = new Usuario("New User",email,password,role);
+            if (role == null) {
+                JOptionPane.showMessageDialog(this, "Role '" + selectedRoleName + "' could not be created. Contact administrator.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Usuario newUser = new Usuario("New User", email, password, role);
             newUser.setNombre("New User");
             newUser.setMail(email);
             newUser.setContrasena(password);

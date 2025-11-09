@@ -20,11 +20,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.SwingUtilities;
 
 public class Main {
     public static void main(String[] args) throws ErrorConectionMongoException, SQLException {
         System.out.println("Iniciando el TPO");
-        WelcomeFrame welcomeFrame = new WelcomeFrame();
+        // Ensure Swing UI is shown on the Event Dispatch Thread
+        SwingUtilities.invokeLater(() -> {
+            WelcomeFrame welcomeFrame = new WelcomeFrame();
+            welcomeFrame.setVisible(true);
+        });
         /*
         CassandraPool cassandraPool = CassandraPool.getInstance();
 

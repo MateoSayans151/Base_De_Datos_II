@@ -1,20 +1,66 @@
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\app\Main.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\connections\CassandraPool.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\connections\MongoPool.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\connections\RedisPool.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\connections\SQLPool.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\controlador\MedicionController.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\controlador\SensorController.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\controlador\UsuarioController.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\exceptions\ErrorConectionMongoException.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\modelo\CuentaCorriente.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\modelo\Medicion.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\modelo\Sensor.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\modelo\Usuario.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\repositories\CassandraRepository.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\repositories\MongoRepositoy.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\services\CuentaCorrienteService.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\services\MedicionService.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\services\SensorService.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\services\UsuarioService.java
-C:\Users\tomir\Documents\GitHub\Base_De_Datos_II\src\main\java\test\Test.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\app\Main.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\app\MessageConsoleTest.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\connections\CassandraPool.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\connections\MongoPool.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\connections\RedisPool.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\connections\SQLPool.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\controller\MedicionController.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\controller\RegistroSensorController.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\controller\UsuarioController.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\Alerta.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\ControlFuncionamiento.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\CuentaCorriente.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\Factura.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\Grupo.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\HistorialEjecucion.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\Medicion.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\Mensaje.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\MovimientoCC.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\Pago.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\Proceso.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\Rol.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\Sensor.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\Sesion.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\SolicitudProceso.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\entity\Usuario.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\exceptions\ErrorConectionMongoException.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\cassandra\AlertaRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\cassandra\MedicionRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\mongo\CuentaCorrienteRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\mongo\FacturaRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\mongo\GrupoRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\mongo\MensajesRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\mongo\ProcesoRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\mongo\RolRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\mongo\SensorRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\mongo\SolicitudProcesoRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\mongo\UsuarioRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\redis\InicioSesionRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\sql\CuentaCorrienteRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\sql\MovimientoRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\repository\sql\PagosRepository.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\AlertaService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\CuentaCorrienteService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\ExecuteService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\FacturaService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\GrupoService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\MedicionService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\MensajeService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\ProcesoService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\RegistroSensorService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\RolService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\SensorService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\SolicitudProcesoService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\service\UsuarioService.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\test\Test.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\ui\DashboardAdminFrame.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\ui\DashboardClientFrame.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\ui\DashboardFrame.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\ui\EnviarMensajeFrame.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\ui\LoginFrame.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\ui\ProcessApprovalFrame.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\ui\ProcessRequestFrame.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\ui\VerMensajesFrame.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\ui\WelcomeFrame.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\utilities\Config.java
+C:\Users\valen\OneDrive\Escritorio\UADE\UADE VALEN\2do Cuatri 2025\Base_De_Datos_II-main\Base_De_Datos_II-main\src\main\java\utilities\MigracionSaldos.java

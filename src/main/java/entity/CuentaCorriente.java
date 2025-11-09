@@ -1,9 +1,9 @@
 package entity;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 @Entity
 public class CuentaCorriente {
@@ -11,14 +11,18 @@ public class CuentaCorriente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private String numeroCuenta;
+    
+    private int usuarioId;
+    
     private Double saldo;
 
-    public CuentaCorriente() { }
+    public CuentaCorriente() { 
+        this.saldo = 0.0;
+    }
 
-    public CuentaCorriente(String numeroCuenta, Double saldo) {
-        this.numeroCuenta = numeroCuenta;
-        this.saldo = saldo;
+    public CuentaCorriente(int usuarioId) {
+        this.usuarioId = usuarioId;
+        this.saldo = 0.0;
     }
 
     public int getId() {
@@ -29,12 +33,12 @@ public class CuentaCorriente {
         this.id = id;
     }
 
-    public String getNumeroCuenta() {
-        return numeroCuenta;
+    public int getUsuarioId() {
+        return usuarioId;
     }
 
-    public void setNumeroCuenta(String numeroCuenta) {
-        this.numeroCuenta = numeroCuenta;
+    public void setUsuarioId(int usuarioId) {
+        this.usuarioId = usuarioId;
     }
 
     public Double getSaldo() {

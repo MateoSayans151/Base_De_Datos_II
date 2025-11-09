@@ -13,6 +13,7 @@ import repository.mongo.*;
 import repository.cassandra.*;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 public class DashboardAdminFrame extends JFrame {
     private String userToken;
@@ -23,6 +24,8 @@ public class DashboardAdminFrame extends JFrame {
     private final UsuarioService usuarioService;
     private final SensorService sensorService;
     private final MedicionService medicionService;
+    private final SolicitudProcesoService solicitudProcesoService;
+    private final SolicitudProcesoRepository solicitudProcesoRepository;
 
     public DashboardAdminFrame(String token) {
         this.userToken = token;
@@ -31,6 +34,8 @@ public class DashboardAdminFrame extends JFrame {
         this.usuarioService = new UsuarioService();
         this.sensorService = new SensorService();
         this.medicionService = new MedicionService();
+        this.solicitudProcesoRepository = SolicitudProcesoRepository.getInstance();
+        this.solicitudProcesoService = new SolicitudProcesoService(solicitudProcesoRepository);
         
         try {
             JSONObject session = usuarioService.getSession(userToken);
@@ -74,6 +79,12 @@ public class DashboardAdminFrame extends JFrame {
         mainPanel.add(createSensorsPanel(), "SENSORS");
         mainPanel.add(createInvoicesPanel(), "INVOICES");
         mainPanel.add(createUsersPanel(), "USERS");
+        mainPanel.add(createMessagesPanel(), "MESSAGES");
+        
+        // Para técnicos: Panel de aprobación de procesos
+        if ("Tecnico".equals(currentUser.getRol().getNombre())) {
+            mainPanel.add(createProcessApprovalPanel(), "PROCESS_APPROVAL");
+        }
 
         // Layout principal
         setLayout(new BorderLayout());
@@ -98,6 +109,13 @@ public class DashboardAdminFrame extends JFrame {
         JLabel roleLabel = new JLabel(currentUser.getRol().getNombre());
         roleLabel.setForeground(new Color(46, 204, 113));
         roleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        
+        // Si es técnico, agregar botón de aprobación de procesos
+        if ("Tecnico".equals(currentUser.getRol().getNombre())) {
+            JButton procesosBtn = createMenuButton("Aprobación de Procesos", "PROCESS_APPROVAL");
+            menuPanel.add(procesosBtn);
+            menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        }
         roleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel nameLabel = new JLabel(currentUser.getNombre());
@@ -117,6 +135,7 @@ public class DashboardAdminFrame extends JFrame {
         addMenuButton(menuPanel, "Gestionar Sensores", "SENSORS");
         addMenuButton(menuPanel, "Gestionar Facturas", "INVOICES");
         addMenuButton(menuPanel, "Gestionar Usuarios", "USERS");
+        addMenuButton(menuPanel, "Mensajería", "MESSAGES");
         
         // Botón de cerrar sesión
         menuPanel.add(Box.createVerticalGlue());
@@ -138,6 +157,16 @@ public class DashboardAdminFrame extends JFrame {
         
         panel.add(button);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
+    }
+
+    // Helper that returns a styled menu button (used for conditional additions)
+    private JButton createMenuButton(String text, String cardName) {
+        JButton button = new JButton(text);
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setMaximumSize(new Dimension(200, 40));
+        button.setFont(new Font("Arial", Font.PLAIN, 14));
+        button.addActionListener(e -> cardLayout.show(mainPanel, cardName));
+        return button;
     }
 
     private JPanel createWelcomePanel() {
@@ -377,25 +406,31 @@ public class DashboardAdminFrame extends JFrame {
     }
 
     private void refreshSensorsTable(JTable table) {
-        try {
-            List<Sensor> sensores = SensorService.getInstance().getAllSensors();
-            DefaultTableModel model = (DefaultTableModel) table.getModel();
-            model.setRowCount(0);
-
-            for (Sensor sensor : sensores) {
-                model.addRow(new Object[]{
-                    sensor.getId(),
-                    sensor.getCod(),
-                    sensor.getTipo(),
-                    sensor.getCiudad(),
-                    sensor.getPais(),
-                    sensor.getEstado()
+        // Run sensor loading off the EDT to avoid freezing the UI when DB is slow/unreachable
+        new Thread(() -> {
+            try {
+                List<Sensor> sensores = SensorService.getInstance().getAllSensors();
+                DefaultTableModel model = (DefaultTableModel) table.getModel();
+                // Update model on EDT
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    model.setRowCount(0);
+                    for (Sensor sensor : sensores) {
+                        model.addRow(new Object[]{
+                            sensor.getId(),
+                            sensor.getCod(),
+                            sensor.getTipo(),
+                            sensor.getCiudad(),
+                            sensor.getPais(),
+                            sensor.getEstado()
+                        });
+                    }
                 });
+            } catch (Exception e) {
+                javax.swing.SwingUtilities.invokeLater(() ->
+                    JOptionPane.showMessageDialog(this, "Error al cargar sensores: " + e.getMessage())
+                );
             }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, 
-                "Error al cargar sensores: " + e.getMessage());
-        }
+        }).start();
     }
 
     private JPanel createInvoicesPanel() {
@@ -424,6 +459,158 @@ public class DashboardAdminFrame extends JFrame {
         return panel;
     }
 
+    private JPanel createProcessApprovalPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        panel.setBackground(new Color(236, 240, 241));
+
+        // Título
+        JLabel titleLabel = new JLabel("Aprobación de Procesos");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        // Panel central con la lista de solicitudes
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.setBackground(new Color(236, 240, 241));
+
+        // Tabla de solicitudes
+        String[] columnNames = {"ID", "Cliente", "Proceso", "Fecha", "Estado", "Costo"};
+        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        JTable solicitudesTable = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(solicitudesTable);
+
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // Panel de botones
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(new Color(236, 240, 241));
+
+        JButton aprobarBtn = new JButton("Aprobar");
+        JButton rechazarBtn = new JButton("Rechazar");
+        JButton refreshBtn = new JButton("Actualizar");
+
+        aprobarBtn.setEnabled(false);
+        rechazarBtn.setEnabled(false);
+
+        // Habilitar/deshabilitar botones según selección
+        solicitudesTable.getSelectionModel().addListSelectionListener(e -> {
+            boolean rowSelected = solicitudesTable.getSelectedRow() != -1;
+            aprobarBtn.setEnabled(rowSelected);
+            rechazarBtn.setEnabled(rowSelected);
+        });
+
+        // Actualizar lista de solicitudes (fetch in background to avoid blocking the EDT)
+        refreshBtn.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    List<SolicitudProceso> solicitudes = solicitudProcesoService.listarPorEstado("PENDIENTE");
+                    javax.swing.SwingUtilities.invokeLater(() -> {
+                        tableModel.setRowCount(0);
+                        for (SolicitudProceso sol : solicitudes) {
+                            tableModel.addRow(new Object[]{
+                                sol.getId(),
+                                sol.getUsuario().getNombre(),
+                                sol.getProceso().getNombre(),
+                                sol.getFechaSolicitud(),
+                                sol.getEstado(),
+                                sol.getProceso().getCosto()
+                            });
+                        }
+                    });
+                } catch (Exception ex) {
+                    javax.swing.SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(panel,
+                        "Error al cargar solicitudes: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE));
+                }
+            }).start();
+        });
+
+        // Acción de aprobar
+        aprobarBtn.addActionListener(e -> {
+            int selectedRow = solicitudesTable.getSelectedRow();
+            if (selectedRow != -1) {
+                int solicitudId = (int) tableModel.getValueAt(selectedRow, 0);
+                try {
+                    Optional<SolicitudProceso> optSolicitud = solicitudProcesoService.obtenerPorId(solicitudId);
+                    
+                    if (optSolicitud.isPresent()) {
+                        SolicitudProceso solicitud = optSolicitud.get();
+                        solicitudProcesoService.actualizarEstado(solicitud.getId(), "APROBADO");
+                        
+                        // Crear factura
+                        Factura factura = new Factura();
+                        factura.setUsuario(solicitud.getUsuario());
+                        factura.setFechaEmision(LocalDate.now());
+                        factura.setProcesosFacturados(List.of(solicitud.getProceso()));
+                        factura.setTotal(solicitud.getProceso().getCosto());
+                        factura.setEstado("PENDIENTE");
+                        
+                        FacturaService facturaService = new FacturaService();
+                        facturaService.createFactura(factura);
+                        
+                        JOptionPane.showMessageDialog(panel,
+                            "Solicitud aprobada y factura generada",
+                            "Éxito",
+                            JOptionPane.INFORMATION_MESSAGE);
+                            
+                        refreshBtn.doClick();
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(panel,
+                        "Error al aprobar solicitud: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        // Acción de rechazar
+        rechazarBtn.addActionListener(e -> {
+            int selectedRow = solicitudesTable.getSelectedRow();
+            if (selectedRow != -1) {
+                int solicitudId = (int) tableModel.getValueAt(selectedRow, 0);
+                try {
+                    Optional<SolicitudProceso> optSolicitud = solicitudProcesoService.obtenerPorId(solicitudId);
+                    
+                    if (optSolicitud.isPresent()) {
+                        SolicitudProceso solicitud = optSolicitud.get();
+                        solicitudProcesoService.actualizarEstado(solicitud.getId(), "RECHAZADO");
+                        
+                        JOptionPane.showMessageDialog(panel,
+                            "Solicitud rechazada",
+                            "Éxito",
+                            JOptionPane.INFORMATION_MESSAGE);
+                            
+                        refreshBtn.doClick();
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(panel,
+                        "Error al rechazar solicitud: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        buttonPanel.add(refreshBtn);
+        buttonPanel.add(aprobarBtn);
+        buttonPanel.add(rechazarBtn);
+
+        centerPanel.add(buttonPanel, BorderLayout.SOUTH);
+        panel.add(centerPanel, BorderLayout.CENTER);
+
+    // Cargar datos iniciales (run the refresh action which itself fetches in background)
+    refreshBtn.doClick();
+
+        return panel;
+    }
+
     private void logout() {
         try {
             usuarioService.logout(userToken);
@@ -433,6 +620,36 @@ public class DashboardAdminFrame extends JFrame {
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error al cerrar sesión: " + e.getMessage());
         }
+    }
+
+    private JPanel createMessagesPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(236, 240, 241));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Open VerMensajesFrame directly for the current user
+        VerMensajesFrame mensajesFrame = new VerMensajesFrame(currentUser);
+        mensajesFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Allow closing messages without closing dashboard
+        mensajesFrame.setVisible(true);
+
+        // Show a message in the dashboard panel
+        JLabel label = new JLabel("Ventana de mensajes abierta en una ventana separada");
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+        panel.add(label, BorderLayout.CENTER);
+
+        // Add a button to reopen messages if closed
+        JButton openMessagesButton = new JButton("Abrir Mensajes");
+        openMessagesButton.addActionListener(e -> {
+            VerMensajesFrame newFrame = new VerMensajesFrame(currentUser);
+            newFrame.setVisible(true);
+        });
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setBackground(new Color(236, 240, 241));
+        buttonPanel.add(openMessagesButton);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
+
+        return panel;
     }
 }
 
