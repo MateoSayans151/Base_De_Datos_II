@@ -202,7 +202,7 @@ public class SolicitudProcesoRepository {
 
         // Rehidratar Proceso
         if (procesoId != null) {
-            Proceso p = procesoRepo.obtenerProceso(procesoId);
+            Proceso p = procesoRepo.obtenerProceso((procesoId));
             if (p != null)
                 s.setProceso(p);
         }

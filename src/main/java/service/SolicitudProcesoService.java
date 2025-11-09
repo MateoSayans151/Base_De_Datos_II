@@ -1,24 +1,28 @@
 package service;
 
-import entity.Proceso;
-import entity.SolicitudProceso;
-import entity.Usuario;
-import jakarta.transaction.Transactional;
-import org.springframework.stereotype.Service;
-import repository.mongo.SolicitudProcesoRepository;
-import exceptions.ErrorConectionMongoException; // <-- importa tu excepción
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.stereotype.Service;
+
+import entity.HistorialEjecucion;
+import entity.Proceso;
+import entity.SolicitudProceso;
+import entity.Usuario;
+import exceptions.ErrorConectionMongoException; // <-- importa tu excepción
+import jakarta.transaction.Transactional;
+import repository.mongo.HistorialEjecucionRepository;
+import repository.mongo.SolicitudProcesoRepository;
 @Service
 public class SolicitudProcesoService {
 
     private final SolicitudProcesoRepository repo;
+    private final HistorialEjecucionRepository historialRepo;
 
-    public SolicitudProcesoService(SolicitudProcesoRepository repo) {
+    public SolicitudProcesoService(SolicitudProcesoRepository repo, HistorialEjecucionRepository historialRepo) {
         this.repo = repo;
+        this.historialRepo = historialRepo;
     }
 
     /* ===========================
@@ -29,6 +33,26 @@ public class SolicitudProcesoService {
     public SolicitudProceso crearSolicitud(Usuario usuario, Proceso proceso, String estado) {
         if (usuario == null || proceso == null)
             throw new IllegalArgumentException("Usuario y Proceso no pueden ser nulos");
+
+        // Validar que el usuario tenga rol "tecnico"
+        boolean esTecnico = false;
+        try {
+            // Sólo usamos getRol(); soportamos que devuelva String o entity.Rol
+            Object rolObj = usuario.getRol();
+            if (rolObj != null) {
+                if (rolObj instanceof String) {
+                    if ("tecnico".equalsIgnoreCase((String) rolObj)) esTecnico = true;
+                } else if (rolObj instanceof entity.Rol) {
+                    entity.Rol r = (entity.Rol) rolObj;
+                    if (r.getNombre() != null && r.getNombre().equalsIgnoreCase("tecnico")) esTecnico = true;
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        if (!esTecnico) {
+            throw new SecurityException("Solo usuarios con rol 'tecnico' pueden crear solicitudes");
+        }
+
         try {
             SolicitudProceso solicitud = new SolicitudProceso();
             solicitud.setUsuario(usuario);
@@ -118,7 +142,22 @@ public class SolicitudProcesoService {
             SolicitudProceso solicitud = repo.findById(id)
                     .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
             solicitud.setEstado("completado");
-            return repo.save(solicitud);
+            SolicitudProceso saved = repo.save(solicitud);
+
+            // Agregar entrada en historial de ejecucion (no provocar rollback si falla)
+            try {
+                HistorialEjecucion h = new HistorialEjecucion();
+                h.setSolicitud(saved); // asume que HistorialEjecucion tiene referencia a SolicitudProceso
+                h.setFechaEjecucion(LocalDateTime.now());
+                h.setResultado("Solicitud completada");
+                h.setEstado("completado");
+                historialRepo.save(h);
+            } catch (ErrorConectionMongoException ex) {
+                // Registrar y continuar; si prefieres fallar la transacción, relanzar aquí
+                System.err.println("No se pudo guardar HistorialEjecucion: " + ex.getMessage());
+            }
+
+            return saved;
         } catch (ErrorConectionMongoException e) {
             throw new RuntimeException("Mongo: error al marcar como completado id=" + id, e);
         }

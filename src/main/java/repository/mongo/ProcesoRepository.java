@@ -44,7 +44,7 @@ public class ProcesoRepository {
         }
     }
 
-    public Proceso obtenerProceso(String id) throws ErrorConectionMongoException {
+    public Proceso obtenerProceso(int id) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         Proceso proceso = null;
