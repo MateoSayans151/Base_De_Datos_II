@@ -32,16 +32,18 @@ public class DashboardAdminFrame extends JFrame {
     private final MedicionService medicionService;
     private final SolicitudProcesoService solicitudProcesoService;
     private final SolicitudProcesoRepository solicitudProcesoRepository;
+    private final HistorialEjecucionRepository historialRepo;
 
     public DashboardAdminFrame(String token) {
         this.userToken = token;
         
         // Initialize services
+        this.historialRepo = HistorialEjecucionRepository.getInstance();
         this.usuarioService = new UsuarioService();
         this.sensorService = new SensorService();
         this.medicionService = new MedicionService();
         this.solicitudProcesoRepository = SolicitudProcesoRepository.getInstance();
-        this.solicitudProcesoService = new SolicitudProcesoService(solicitudProcesoRepository);
+        this.solicitudProcesoService = new SolicitudProcesoService(solicitudProcesoRepository,historialRepo);
         
         try {
             JSONObject session = usuarioService.getSession(userToken);

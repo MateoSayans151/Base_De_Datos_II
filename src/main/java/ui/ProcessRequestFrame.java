@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDateTime;
 import entity.*;
+import repository.mongo.HistorialEjecucionRepository;
 import service.*;
 import exceptions.ErrorConectionMongoException;
 import repository.mongo.SolicitudProcesoRepository;
@@ -15,12 +16,14 @@ public class ProcessRequestFrame extends JFrame {
     private JList<Proceso> procesoList;
     private DefaultListModel<Proceso> listModel;
     private final SolicitudProcesoRepository solicitudRepo;
+    private final HistorialEjecucionRepository historialRepo;
 
     public ProcessRequestFrame(Usuario user) {
+        this.historialRepo = HistorialEjecucionRepository.getInstance();
         this.currentUser = user;
         this.procesoService = new ProcesoService();
         this.solicitudRepo = SolicitudProcesoRepository.getInstance();
-        this.solicitudService = new SolicitudProcesoService(solicitudRepo);
+        this.solicitudService = new SolicitudProcesoService(solicitudRepo,historialRepo);
         
         setupUI();
         loadProcesos();
