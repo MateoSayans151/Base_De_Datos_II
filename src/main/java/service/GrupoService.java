@@ -2,10 +2,12 @@ package service;
 
 import entity.Grupo;
 import entity.Mensaje;
+import entity.Usuario;
 import exceptions.ErrorConectionMongoException;
 import repository.mongo.GrupoRepository;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class GrupoService {
 
@@ -40,5 +42,28 @@ public class GrupoService {
     }
     public List<Mensaje> getMessagesFromGroup(int grupoId) throws ErrorConectionMongoException {
         return grupoRepository.getMessagesByGroupId(grupoId);
+    }
+
+    // Backwards-compatible wrapper used by UI
+    public java.util.List<Grupo> getGruposByUsuario(Usuario usuario) {
+        try {
+            return getGroupByUserId(usuario.getId());
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    public Grupo crearGrupo(String nombre, Usuario creador) {
+        try {
+            Grupo nuevo = new Grupo(nombre);
+            // Attempt to set initial members list with the creator
+            java.util.List<Usuario> miembros = new ArrayList<>();
+            miembros.add(creador);
+            nuevo.setMiembros(miembros);
+            createGroup(nuevo);
+            return nuevo;
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

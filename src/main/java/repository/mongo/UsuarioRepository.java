@@ -58,7 +58,7 @@ public class UsuarioRepository {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
         var collection = connection.getCollection(COLLECTION_NAME);
-        Usuario usuario = new Usuario();
+        Usuario usuario = null;
         Rol rol = new Rol();
         try {
             Document filter = new Document("mail", mail);
@@ -71,6 +71,7 @@ public class UsuarioRepository {
             throw new RuntimeException(e);
         }
 
+        // return null if not found
         return usuario;
     }
     public Usuario getUserById(int idUsuario) throws ErrorConectionMongoException {

@@ -22,14 +22,42 @@ public class UsuarioService {
 
     }
 
+    // Backwards-compatible helper used by UI code. Wraps checked exceptions
+    public java.util.List<Usuario> getAllUsuarios() {
+        try {
+            return getAll();
+        } catch (ErrorConectionMongoException e) {
+            // If Mongo is not available, return empty list to keep UI responsive
+            return new java.util.ArrayList<>();
+        }
+    }
     // LISTAR TODOS LOS USUARIOS
     public List<Usuario> getAll() throws ErrorConectionMongoException {
         return UsuarioRepository.getInstance().getAllUsers();
     }
 
     // OBTENER USUARIO POR ID
-    public Usuario getById(int id) throws ErrorConectionMongoException {
-        return UsuarioRepository.getInstance().getUserById(id);
+    public Usuario getUsuarioById(int id) {
+        try {
+            return UsuarioRepository.getInstance().getUserById(id);
+        } catch (ErrorConectionMongoException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public Usuario getUsuarioByEmail(String email) {
+        try {
+            return UsuarioRepository.getInstance().getUserByMail(email);
+        } catch (ErrorConectionMongoException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Backwards-compatible alias used by older code
+    public Usuario getById(int id) {
+        return getUsuarioById(id);
     }
 
     // CREAR NUEVO USUARIO

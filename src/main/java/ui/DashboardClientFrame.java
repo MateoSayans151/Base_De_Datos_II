@@ -5,9 +5,11 @@ import java.awt.*;
 
 import service.ExecuteService;
 import service.UsuarioService;
+import service.CuentaCorrienteService;
+import service.FacturaService;
 import entity.Usuario;
-import exceptions.*;
-import java.awt.event.*;
+import entity.Factura;
+import java.util.List;
 
 public class DashboardClientFrame extends JFrame {
     private String userToken;
@@ -47,7 +49,6 @@ public class DashboardClientFrame extends JFrame {
     mainPanel.add(createViewBalancePanel(), "BALANCE");
     mainPanel.add(createPayInvoicePanel(), "PAY_INVOICE");
     mainPanel.add(createAddFundsPanel(), "ADD_FUNDS");
-
         JPanel menuPanel = createMenuPanel();
 
         setLayout(new BorderLayout());
@@ -91,6 +92,17 @@ public class DashboardClientFrame extends JFrame {
     addMenuButton(menuPanel, "Ver Saldo", "BALANCE");
     addMenuButton(menuPanel, "Pagar Factura", "PAY_INVOICE");
     addMenuButton(menuPanel, "Agregar Fondos", "ADD_FUNDS");
+
+    // Mensajería - abrir ventana de mensajes
+    JButton mensajesBtn = new JButton("Mensajes");
+    mensajesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+    mensajesBtn.setMaximumSize(new Dimension(200, 40));
+    mensajesBtn.addActionListener(e -> {
+        VerMensajesFrame vm = new VerMensajesFrame(currentUser);
+        vm.setVisible(true);
+    });
+    menuPanel.add(mensajesBtn);
+    menuPanel.add(Box.createRigidArea(new Dimension(0,10)));
 
         menuPanel.add(Box.createVerticalGlue());
         JButton logoutBtn = new JButton("Cerrar Sesión");
@@ -318,12 +330,35 @@ public class DashboardClientFrame extends JFrame {
         title.setFont(new Font("Arial", Font.BOLD, 18));
         p.add(title, BorderLayout.NORTH);
 
-        JPanel center = new JPanel(new GridLayout(2,1,10,10));
+        JPanel center = new JPanel(new GridLayout(3,1,10,10));
         center.setBackground(new Color(236, 240, 241));
-        center.add(new JLabel("Saldo disponible:"));
-        center.add(new JLabel("(Placeholder) $0.00"));
+        
+        JLabel saldoLabel = new JLabel("Saldo disponible:");
+        JLabel montoLabel = new JLabel("$0.00");
+        montoLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        
+        JButton refreshBtn = new JButton("Actualizar Saldo");
+        refreshBtn.addActionListener(e -> {
+            try {
+                double saldo = consultarSaldo();
+                montoLabel.setText(String.format("$%.2f", saldo));
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, 
+                    "Error al consultar saldo: " + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        center.add(saldoLabel);
+        center.add(montoLabel);
+        center.add(refreshBtn);
 
         p.add(center, BorderLayout.CENTER);
+        
+        // Trigger initial balance load
+        refreshBtn.doClick();
+        
         return p;
     }
 
@@ -336,18 +371,133 @@ public class DashboardClientFrame extends JFrame {
         title.setFont(new Font("Arial", Font.BOLD, 18));
         p.add(title, BorderLayout.NORTH);
 
-        JPanel center = new JPanel(new BorderLayout());
+        JPanel center = new JPanel(new GridBagLayout());
         center.setBackground(new Color(236, 240, 241));
-        center.add(new JLabel("(Placeholder) Selección de factura y método de pago"), BorderLayout.CENTER);
+        
+        // Lista de facturas pendientes
+        DefaultListModel<Factura> facturaListModel = new DefaultListModel<>();
+        JList<Factura> facturaList = new JList<>(facturaListModel);
+        facturaList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        facturaList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Factura) {
+                    Factura factura = (Factura) value;
+                    setText(String.format("Factura #%d - $%.2f - Fecha: %s",
+                        factura.getId(),
+                        factura.getTotal(),
+                        factura.getFechaEmision().toString()));
+                }
+                return c;
+            }
+        });
+        
+        JScrollPane scrollPane = new JScrollPane(facturaList);
+        scrollPane.setPreferredSize(new Dimension(400, 200));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(5,5,5,5);
+        
+        // Label para facturas
+        gbc.gridx = 0; gbc.gridy = 0;
+        center.add(new JLabel("Facturas pendientes:"), gbc);
+        
+        // Lista de facturas
+        gbc.gridy = 1;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        center.add(scrollPane, gbc);
+        
+        // Saldo disponible
+        gbc.gridy = 2;
+        gbc.weighty = 0;
+        JLabel saldoLabel = new JLabel("Saldo disponible: $0.00");
+        center.add(saldoLabel, gbc);
+        
+        // Botón de actualizar
+        JButton refreshBtn = new JButton("Actualizar");
+        refreshBtn.addActionListener(e -> {
+            try {
+                // Actualizar saldo
+                double saldo = consultarSaldo();
+                saldoLabel.setText(String.format("Saldo disponible: $%.2f", saldo));
+                
+                // Actualizar lista de facturas
+                FacturaService facturaService = new FacturaService();
+                List<Factura> facturas = facturaService.getFacturasByUsuario(currentUser.getId());
+                facturaListModel.clear();
+                for (Factura f : facturas) {
+                    if ("PENDIENTE".equalsIgnoreCase(f.getEstado())) {
+                        facturaListModel.addElement(f);
+                    }
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(p,
+                    "Error al actualizar: " + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        JButton payBtn = new JButton("Pagar Factura Seleccionada");
+        payBtn.addActionListener(e -> {
+            Factura selectedFactura = facturaList.getSelectedValue();
+            if (selectedFactura == null) {
+                JOptionPane.showMessageDialog(p,
+                    "Por favor seleccione una factura para pagar",
+                    "Error",
+                    JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            try {
+                double saldo = consultarSaldo();
+                
+                if (saldo < selectedFactura.getTotal()) {
+                    JOptionPane.showMessageDialog(p,
+                        "Saldo insuficiente para pagar la factura",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                // Realizar el pago
+                retirarFondos(selectedFactura.getTotal());
+                
+                // Actualizar estado de la factura
+                FacturaService facturaService = new FacturaService();
+                facturaService.updateEstado(selectedFactura.getId(), "PAGADA");
+                
+                JOptionPane.showMessageDialog(p,
+                    "Factura pagada exitosamente",
+                    "Éxito",
+                    JOptionPane.INFORMATION_MESSAGE);
+                
+                // Actualizar la vista
+                refreshBtn.doClick();
+                
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(p,
+                    "Error al procesar el pago: " + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        });
 
-    JButton payBtn = new JButton("Pagar");
-    // Visual-only: habilitado pero solo muestra tooltip (sin ejecutar lógica)
-    payBtn.setToolTipText("Acción visual: no implementada aún");
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottom.add(payBtn);
-
+        // Panel de botones
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.add(refreshBtn);
+        buttonPanel.add(payBtn);
+        
         p.add(center, BorderLayout.CENTER);
-        p.add(bottom, BorderLayout.SOUTH);
+        p.add(buttonPanel, BorderLayout.SOUTH);
+        
+        // Cargar datos iniciales
+        refreshBtn.doClick();
+        
         return p;
     }
 
@@ -360,22 +510,120 @@ public class DashboardClientFrame extends JFrame {
         title.setFont(new Font("Arial", Font.BOLD, 18));
         p.add(title, BorderLayout.NORTH);
 
-        JPanel center = new JPanel(new GridLayout(2,2,10,10));
+        JPanel center = new JPanel(new GridBagLayout());
         center.setBackground(new Color(236, 240, 241));
-        center.add(new JLabel("Monto:"));
-        center.add(new JTextField("0.00"));
-        center.add(new JLabel("Método de pago:"));
-        center.add(new JLabel("(Placeholder)"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5,5,5,5);
 
-    JButton addBtn = new JButton("Agregar Fondos");
-    // Visual-only: habilitado pero solo muestra tooltip (sin ejecutar lógica)
-    addBtn.setToolTipText("Acción visual: no implementada aún");
+        // Monto
+        gbc.gridx = 0; gbc.gridy = 0;
+        center.add(new JLabel("Monto: $"), gbc);
+        JTextField montoField = new JTextField();
+        gbc.gridx = 1;
+        center.add(montoField, gbc);
+
+        // Método de pago
+        gbc.gridx = 0; gbc.gridy = 1;
+        center.add(new JLabel("Método de pago:"), gbc);
+        JComboBox<String> metodoPago = new JComboBox<>(new String[]{"Efectivo", "Tarjeta de Débito", "Transferencia"});
+        gbc.gridx = 1;
+        center.add(metodoPago, gbc);
+
+        // Saldo actual
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        JLabel saldoActual = new JLabel("Saldo actual: $0.00");
+        center.add(saldoActual, gbc);
+
+        // Actualizar saldo actual
+        try {
+            double saldo = consultarSaldo();
+            saldoActual.setText(String.format("Saldo actual: $%.2f", saldo));
+        } catch (Exception ex) {
+            saldoActual.setText("Error al consultar saldo");
+        }
+
+        JButton addBtn = new JButton("Agregar Fondos");
+        addBtn.addActionListener(e -> {
+            try {
+                String montoStr = montoField.getText().trim();
+                double monto = Double.parseDouble(montoStr);
+                
+                if (monto <= 0) {
+                    throw new IllegalArgumentException("El monto debe ser mayor a 0");
+                }
+
+                agregarFondos(monto);
+                // Actualizar saldo mostrado
+                double nuevoSaldo = consultarSaldo();
+                saldoActual.setText(String.format("Saldo actual: $%.2f", nuevoSaldo));
+
+                JOptionPane.showMessageDialog(this,
+                    String.format("Se agregaron $%.2f a su cuenta", monto),
+                    "Éxito",
+                    JOptionPane.INFORMATION_MESSAGE);
+                
+                montoField.setText("");
+                
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this,
+                    "Por favor ingrese un monto válido",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this,
+                    "Error al agregar fondos: " + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.setBackground(new Color(236, 240, 241));
         bottom.add(addBtn);
 
         p.add(center, BorderLayout.CENTER);
         p.add(bottom, BorderLayout.SOUTH);
         return p;
+    }
+
+    // Helper methods for cuenta corriente operations
+    private double consultarSaldo() {
+        try {
+            CuentaCorrienteService ccService = new CuentaCorrienteService();
+            return ccService.consultarSaldo(currentUser.getId());
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                "Error al consultar saldo: " + e.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+            return 0.0;
+        }
+    }
+
+    private void agregarFondos(double monto) {
+        try {
+            CuentaCorrienteService ccService = new CuentaCorrienteService();
+            ccService.agregarFondos(currentUser.getId(), monto);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                "Error al agregar fondos: " + e.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void retirarFondos(double monto) {
+        try {
+            CuentaCorrienteService ccService = new CuentaCorrienteService();
+            ccService.retirarFondos(currentUser.getId(), monto);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                "Error al retirar fondos: " + e.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void logout() {

@@ -28,6 +28,16 @@ public class RolRepository {
         var connection = mongoPool.getConnection();
         try {
             MongoCollection<Document> collection = connection.getCollection(COLLECTION_NAME);
+            // If id not set (0), generate a simple sequential id based on the current max id in collection
+            if (rol.getId() == 0) {
+                Document last = collection.find().sort(new Document("id", -1)).first();
+                int nextId = 1;
+                if (last != null && last.getInteger("id") != null) {
+                    nextId = last.getInteger("id") + 1;
+                }
+                rol.setId(nextId);
+            }
+
             Document newRol = new Document()
                     .append("id", rol.getId())
                     .append("nombre", rol.getNombre());
