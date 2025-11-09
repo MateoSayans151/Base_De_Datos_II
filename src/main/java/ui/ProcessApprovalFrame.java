@@ -15,10 +15,12 @@ public class ProcessApprovalFrame extends JFrame {
     private final SolicitudProcesoRepository solicitudRepo;
     private JList<SolicitudProceso> solicitudList;
     private DefaultListModel<SolicitudProceso> listModel;
+    private final HistorialEjecucionRepository historialRepo;
 
     public ProcessApprovalFrame(Usuario user) {
+        this.historialRepo = HistorialEjecucionRepository.getInstance();
         this.solicitudRepo = SolicitudProcesoRepository.getInstance();
-        this.solicitudService = new SolicitudProcesoService(solicitudRepo);
+        this.solicitudService = new SolicitudProcesoService(solicitudRepo,historialRepo);
         this.facturaService = new FacturaService();
         
         setupUI();

@@ -15,6 +15,12 @@ import java.util.List;
 import java.util.Optional;
 import java.time.LocalDate;
 
+import entity.ControlFuncionamiento;
+import entity.Sensor;
+import exceptions.ErrorConectionMongoException;
+import service.ControlFuncionamientoService;
+import service.SensorService;
+
 public class DashboardAdminFrame extends JFrame {
     private String userToken;
     private Usuario currentUser;
@@ -26,16 +32,18 @@ public class DashboardAdminFrame extends JFrame {
     private final MedicionService medicionService;
     private final SolicitudProcesoService solicitudProcesoService;
     private final SolicitudProcesoRepository solicitudProcesoRepository;
+    private final HistorialEjecucionRepository historialRepo;
 
     public DashboardAdminFrame(String token) {
         this.userToken = token;
         
         // Initialize services
+        this.historialRepo = HistorialEjecucionRepository.getInstance();
         this.usuarioService = new UsuarioService();
         this.sensorService = new SensorService();
         this.medicionService = new MedicionService();
         this.solicitudProcesoRepository = SolicitudProcesoRepository.getInstance();
-        this.solicitudProcesoService = new SolicitudProcesoService(solicitudProcesoRepository);
+        this.solicitudProcesoService = new SolicitudProcesoService(solicitudProcesoRepository,historialRepo);
         
         try {
             JSONObject session = usuarioService.getSession(userToken);
@@ -607,6 +615,168 @@ public class DashboardAdminFrame extends JFrame {
 
     // Cargar datos iniciales (run the refresh action which itself fetches in background)
     refreshBtn.doClick();
+
+        return panel;
+    }
+
+    private JPanel createVerControlesPanel() {
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
+
+        // Table
+        DefaultTableModel tableModel = new DefaultTableModel(
+                new String[]{"ID", "SensorId", "Cod", "Fecha", "Estado", "Observaciones"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int col) { return false; }
+        };
+        JTable table = new JTable(tableModel);
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // Controls
+        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton generateBtn = new JButton("Generar Controles");
+        JButton refreshBtn = new JButton("Refrescar");
+        top.add(generateBtn);
+        top.add(refreshBtn);
+        panel.add(top, BorderLayout.NORTH);
+
+        // Services
+        final ControlFuncionamientoService controlService = ControlFuncionamientoService.getInstance();
+        final SensorService sensorService = SensorService.getInstance();
+
+        // Helper to load and show controls
+        Runnable loadControls = () -> {
+            try {
+                List<ControlFuncionamiento> controls = controlService.getAll();
+                SwingUtilities.invokeLater(() -> {
+                    tableModel.setRowCount(0);
+                    if (controls == null) return;
+                    for (ControlFuncionamiento c : controls) {
+                        if (c == null) continue;
+                        Object[] row = new Object[]{
+                                c.getId(),
+                                c.getSensor() != null ? c.getSensor().getId() : null,
+                                c.getSensor() != null ? c.getSensor().getCod() : null,
+                                c.getFechaControl() != null ? c.getFechaControl().toString() : null,
+                                c.getEstado(),
+                                c.getObservaciones()
+                        };
+                        tableModel.addRow(row);
+                    }
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                        "Error loading controls: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE));
+            }
+        };
+
+        // Generate button action: create one control per sensor and then refresh
+        generateBtn.addActionListener(e -> {
+            generateBtn.setEnabled(false);
+            new Thread(() -> {
+                try {
+                    List<Sensor> sensors = sensorService.getAllSensors();
+                    if (sensors != null) {
+                        for (Sensor s : sensors) {
+                            if (s == null) continue;
+                            // create a control for each sensor (no null fields)
+                            ControlFuncionamiento c = new ControlFuncionamiento(
+                                    s,
+                                    LocalDate.now(),
+                                    "funcionando",
+                                    "Generado desde UI"
+                            );
+                            controlService.create(c);
+                        }
+                    }
+                    loadControls.run();
+                } catch (Exception ex) {
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Error generating controls: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE));
+                } finally {
+                    SwingUtilities.invokeLater(() -> generateBtn.setEnabled(true));
+                }
+            }).start();
+        });
+
+        // Refresh button
+        refreshBtn.addActionListener(e -> new Thread(loadControls).start());
+
+        // initial load
+        new Thread(loadControls).start();
+
+        return panel;
+    }
+
+    private JPanel createVerAlertasPanel() {
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
+
+        // Table
+        DefaultTableModel tableModel = new DefaultTableModel(
+                new String[]{"ID", "SensorId", "Cod", "Fecha", "Descripcion", "Estado"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int col) { return false; }
+        };
+        JTable table = new JTable(tableModel);
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // Controls
+        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton generateBtn = new JButton("Generar Alertas");
+        JButton refreshBtn = new JButton("Refrescar");
+        top.add(generateBtn);
+        top.add(refreshBtn);
+        panel.add(top, BorderLayout.NORTH);
+
+        // Service
+        final AlertaService alertaService = AlertaService.getInstance();
+
+        // Helper to load and show alerts
+        Runnable loadAlerts = () -> {
+            try {
+                List<Alerta> alerts = alertaService.checkAlerts();
+                SwingUtilities.invokeLater(() -> {
+                    tableModel.setRowCount(0);
+                    if (alerts == null) return;
+                    for (Alerta a : alerts) {
+                        if (a == null) continue;
+                        Object[] row = new Object[]{
+                                a.getId() != null ? a.getId().toString() : null,
+                                a.getSensor() != null ? a.getSensor().getId() : null,
+                                a.getSensor() != null ? a.getSensor().getCod() : null,
+                                a.getFecha() != null ? a.getFecha().toString() : null,
+                                a.getDescripcion(),
+                                a.getEstado()
+                        };
+                        tableModel.addRow(row);
+                    }
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                        "Error loading alerts: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE));
+            }
+        };
+
+        // Generate button action: create alerts (uses service.createAllAlerts()) then refresh
+        generateBtn.addActionListener(e -> {
+            generateBtn.setEnabled(false);
+            new Thread(() -> {
+                try {
+                    alertaService.createAllAlerts();
+                    loadAlerts.run();
+                } catch (Exception ex) {
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                            "Error generating alerts: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE));
+                } finally {
+                    SwingUtilities.invokeLater(() -> generateBtn.setEnabled(true));
+                }
+            }).start();
+        });
+
+        // Refresh button
+        refreshBtn.addActionListener(e -> new Thread(loadAlerts).start());
+
+        // initial load
+        new Thread(loadAlerts).start();
 
         return panel;
     }
