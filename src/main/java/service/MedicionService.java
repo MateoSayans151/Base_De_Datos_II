@@ -45,37 +45,83 @@ public class MedicionService {
 
     // OBTENER MEDICIONES EN UN RANGO DE FECHAS
 
-    public List<Medicion> getMeasurementsBetweenDatesByCity(String city, LocalDateTime from, LocalDateTime until) throws ErrorConectionMongoException {
+    public Double getMinByCity(String city) throws ErrorConectionMongoException {
         List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
         List<Medicion> measurements = new ArrayList<>();
         for (Sensor sensor : sensors) {
-            List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(sensor.getId(),from, until);
-            for (Medicion m : measurementsRange) {
+            List<Medicion> mess = repo.getMeasurements();
+            for (Medicion m : mess) {
                 if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
                     measurements.add(m);
                 }
 
-
             }
         }
-        return measurements;
+        Double minTemp = measurements.stream()
+                .mapToDouble(Medicion::getTemperatura)
+                .min()
+                .orElse(Double.NaN);
+
+        return minTemp;
     }
-    public List<Medicion> getMeasurementsBetweenDatesByCountry(String country, LocalDateTime from, LocalDateTime until) throws ErrorConectionMongoException {
-        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(country);
+    public Double getMaxByCity(String city) throws ErrorConectionMongoException {
+        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
         List<Medicion> measurements = new ArrayList<>();
         for (Sensor sensor : sensors) {
-            List<Medicion> measurementsRange = repo.getMeasurementsBetwenDates(sensor.getId(), from, until);
-            for (Medicion m : measurementsRange) {
-                if (m.getSensor().getCiudad().equalsIgnoreCase(country)) {
+            List<Medicion> mess = repo.getMeasurements();
+            for (Medicion m : mess) {
+                if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
                     measurements.add(m);
                 }
 
+            }
+        }
+        Double maxTemp = measurements.stream()
+                .mapToDouble(Medicion::getTemperatura)
+                .max()
+                .orElse(Double.NaN);
+
+        return maxTemp;
+    }
+    public Double getMinByCountry(String city) throws ErrorConectionMongoException {
+        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
+        List<Medicion> measurements = new ArrayList<>();
+        for (Sensor sensor : sensors) {
+            List<Medicion> mess = repo.getMeasurements();
+            for (Medicion m : mess) {
+                if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
+                    measurements.add(m);
+                }
 
             }
         }
-        return measurements;
+        Double minTemp = measurements.stream()
+                .mapToDouble(Medicion::getTemperatura)
+                .min()
+                .orElse(Double.NaN);
 
+        return minTemp;
     }
+    public Double getMaxByCountry(String city) throws ErrorConectionMongoException {
+        List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);
+        List<Medicion> measurements = new ArrayList<>();
+        for (Sensor sensor : sensors) {
+            List<Medicion> mess = repo.getMeasurements();
+            for (Medicion m : mess) {
+                if (m.getSensor().getCiudad().equalsIgnoreCase(city)) {
+                    measurements.add(m);
+                }
+
+            }
+        }
+        Double maxTemp = measurements.stream()
+                .mapToDouble(Medicion::getTemperatura)
+                .max()
+                .orElse(Double.NaN);
+
+        return maxTemp;
+    }
+
 
     public Double getAverageHumidityBetweenDatesByCity(String city, LocalDateTime from, LocalDateTime until) throws ErrorConectionMongoException {
         List<Sensor> sensors = SensorRepository.getInstance().getSensorsByCity(city);

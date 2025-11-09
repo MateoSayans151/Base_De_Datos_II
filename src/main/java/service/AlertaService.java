@@ -1,6 +1,9 @@
 package service;
 
 import entity.Alerta;
+import entity.Medicion;
+import entity.Sensor;
+import exceptions.ErrorConectionMongoException;
 import repository.cassandra.AlertaRepository;
 
 import java.time.LocalDateTime;
@@ -34,9 +37,24 @@ public class AlertaService {
         alertaRepository.crearAlerta(alerta);
     }
 
-    // Eliminar alerta por id
-    public void delete(int id) {
-        alertaRepository.eliminarAlerta(id);
+    // Crear alertas para todas las mediciones fuera de rango de todos los sensores
+    public void createAllAlerts() throws ErrorConectionMongoException {
+        SensorService sensorService = SensorService.getInstance();
+        MedicionService medicionService = MedicionService.getInstance();
+        List<Sensor> sensors = sensorService.getAllSensors();
+        for (Sensor sensor : sensors) {
+            List<Medicion> meditions = medicionService.getBySensorId(sensor.getId());
+            for(Medicion medition : meditions){
+                if(medition.getTemperatura() < 0 || medition.getTemperatura() > 35){
+                    Alerta alerta = new Alerta();
+                    alerta.setSensor(sensor);
+                    alerta.setDescripcion("Alerta de temperatura: " + medition.getTemperatura() + "°C");
+                    alerta.setEstado("ACTIVA");
+                    alerta.setFecha(medition.getFecha());
+                    create(alerta);
+                }
+            }
+        }
     }
 
     public List<Alerta> checkAlerts() {

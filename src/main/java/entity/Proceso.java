@@ -2,6 +2,8 @@ package entity;
 
 import jakarta.persistence.*;
 
+import java.util.List;
+
 @Entity
 public class Proceso {
 
@@ -13,6 +15,7 @@ public class Proceso {
     private String descripcion;
     private String tipo;
     private double costo;
+    private List<Usuario> usuarios;
 
     public Proceso() {}
 
@@ -63,4 +66,8 @@ public class Proceso {
     public void setCosto(double costo) {
         this.costo = costo;
     }
+
+    public  List<Usuario> getUsuarios() {return usuarios;}
+
+    public void setUsuarios(List<Usuario> usuarios) {this.usuarios = usuarios;}
 }

@@ -5,9 +5,7 @@ import connections.MongoPool;
 import entity.Proceso;
 import exceptions.ErrorConectionMongoException;
 import org.bson.Document;
-import org.bson.types.Decimal128;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,6 +71,23 @@ public class ProcesoRepository {
             }
         } catch (Exception e) {
             throw new ErrorConectionMongoException("Error al obtener procesos por tipo en MongoDB");
+        }
+        return procesos;
+    }
+    public List<Proceso> getAllProcesses() throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        var collection = connection.getCollection(COLLECTION_NAME);
+        List<Proceso> procesos = new ArrayList<>();
+        try {
+            var resultSet = collection.find().iterator();
+            while (resultSet.hasNext()) {
+                Document result = resultSet.next();
+                Proceso proceso = mappearProceso(result);
+                procesos.add(proceso);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return procesos;
     }

@@ -1,13 +1,7 @@
 package repository.sql;
 
-import entity.Pago;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
-
-@Repository
-public interface PagosRepository extends JpaRepository<Pago, Integer> {
+/*
+public class PagosRepository{
 
     // Buscar pagos por ID de factura
     List<Pago> findByFactura_IdFactura(int idFactura);
@@ -16,3 +10,4 @@ public interface PagosRepository extends JpaRepository<Pago, Integer> {
     List<Pago> findByMetodoPago(String metodoPago);
 }
 
+*/
