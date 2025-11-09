@@ -1,17 +1,32 @@
 package service;
 
+import entity.Factura;
+import entity.Medicion;
 import entity.Proceso;
+import entity.SolicitudProceso;
+import entity.Usuario;
 import exceptions.ErrorConectionMongoException;
+import jakarta.transaction.Transactional;
+
 import org.springframework.stereotype.Service;
+
+import repository.cassandra.MedicionRepository;
 import repository.mongo.ProcesoRepository;
+import repository.mongo.SolicitudProcesoRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Collections;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class ProcesoService {
 
     private final ProcesoRepository repo = ProcesoRepository.getInstance();
+    private final SolicitudProcesoRepository solicitudRepo = SolicitudProcesoRepository.getInstance();
 
     /* ===========================
        VALIDACIONES
@@ -36,6 +51,60 @@ public class ProcesoService {
         validar(proceso);
         repo.crearProceso(proceso);
         return proceso;
+    }
+    @Transactional
+    public Factura asignarUltimaSolicitudYEmitirFactura(Usuario tecnico, Medicion medicion) {
+        if (tecnico == null) throw new IllegalArgumentException("Usuario tecnico no puede ser nulo");
+        // validar rol 'tecnico' usando getRol() (admite entity.Rol o String)
+        boolean esTecnico = false;
+        try {
+            Object rolObj = tecnico.getRol();
+            if (rolObj != null) {
+                if (rolObj instanceof String) {
+                    esTecnico = "tecnico".equalsIgnoreCase((String) rolObj);
+                } else if (rolObj instanceof entity.Rol) {
+                    entity.Rol r = (entity.Rol) rolObj;
+                    esTecnico = r.getNombre() != null && r.getNombre().equalsIgnoreCase("tecnico");
+                }
+            }
+        } catch (Throwable t) { /* ignorar errores de reflexión */ }
+
+        if (!esTecnico) throw new SecurityException("Solo usuarios con rol 'tecnico' pueden asignar mediciones");
+
+        try {
+            // obtener la última solicitud pendiente
+            List<SolicitudProceso> pendientes = solicitudRepo.findByEstadoIgnoreCase("pendiente");
+            if (pendientes == null || pendientes.isEmpty())
+                throw new RuntimeException("No hay solicitudes pendientes");
+
+            SolicitudProceso solicitud = pendientes.get(pendientes.size() - 1);
+
+            // insertar la medición en Cassandra (se asume que 'medicion' ya viene con sensor/fecha adecuados)
+            MedicionRepository medRepo = MedicionRepository.getInstance();
+            medRepo.insertMeasurement(medicion);
+
+            // actualizar la solicitud a completado y guardarla
+            solicitud.setEstado("completado");
+            SolicitudProceso saved = solicitudRepo.save(solicitud);
+
+            // crear la factura para el usuario que hizo la solicitud
+            Proceso proceso = saved.getProceso();
+            Double total = (proceso != null) ? proceso.getCosto() : 0.0;
+            Factura factura = new Factura(
+                    saved.getUsuario(),
+                    LocalDate.now(),
+                    "pendiente", // estado inicial de la factura
+                    (proceso != null) ? Collections.singletonList(proceso) : Collections.emptyList(),
+                    total
+            );
+
+            // TODO: persistir factura si tenés un repositorio/DAO de Factura (p. ej. facturaRepo.save(factura))
+            return factura;
+        } catch (ErrorConectionMongoException e) {
+            throw new RuntimeException("Mongo: error al procesar solicitud/factura", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al asignar medición y emitir factura: " + e.getMessage(), e);
+        }
     }
 
     /* ===========================

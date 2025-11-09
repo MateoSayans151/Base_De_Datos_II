@@ -34,25 +34,6 @@ public class SolicitudProcesoService {
         if (usuario == null || proceso == null)
             throw new IllegalArgumentException("Usuario y Proceso no pueden ser nulos");
 
-        // Validar que el usuario tenga rol "tecnico"
-        boolean esTecnico = false;
-        try {
-            // Sólo usamos getRol(); soportamos que devuelva String o entity.Rol
-            Object rolObj = usuario.getRol();
-            if (rolObj != null) {
-                if (rolObj instanceof String) {
-                    if ("tecnico".equalsIgnoreCase((String) rolObj)) esTecnico = true;
-                } else if (rolObj instanceof entity.Rol) {
-                    entity.Rol r = (entity.Rol) rolObj;
-                    if (r.getNombre() != null && r.getNombre().equalsIgnoreCase("tecnico")) esTecnico = true;
-                }
-            }
-        } catch (Throwable ignored) {}
-
-        if (!esTecnico) {
-            throw new SecurityException("Solo usuarios con rol 'tecnico' pueden crear solicitudes");
-        }
-
         try {
             SolicitudProceso solicitud = new SolicitudProceso();
             solicitud.setUsuario(usuario);
