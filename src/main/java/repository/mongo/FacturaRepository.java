@@ -231,7 +231,23 @@ public class FacturaRepository {
         }
         return facturas;
     }
+    public List<Factura> getFacturasByUsuarioByPagadas(int usuarioId) throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        List<Factura> facturas = new ArrayList<>();
+        try {
+            var collection = connection.getCollection(COLLECTION_NAME);
+            var query = new Document("usuario.idUsuario", usuarioId).append("estado", "Pagada");
+            var cursor = collection.find(query);
 
+            for (Document doc : cursor) {
+                facturas.add(convertDocumentToFactura(doc));
+            }
+        } catch (Exception e) {
+            throw new ErrorConectionMongoException("Error al obtener facturas pagadas del usuario: " + usuarioId);
+        }
+        return facturas;
+    }
     public List<Factura> getFacturasByEstado(String estado) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();

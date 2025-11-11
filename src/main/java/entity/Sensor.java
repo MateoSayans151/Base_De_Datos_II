@@ -27,7 +27,7 @@ public class Sensor {
 
     public Sensor() {}
 
-    public Sensor(String cod,String tipo,Double latitud,Double longitud,String ciudad,String pais,LocalDateTime fechaIni) {
+    public Sensor(String cod,String tipo,Double latitud,Double longitud,String ciudad,String pais) {
         this.cod = cod;
         this.tipo = tipo;
         this.latitud = latitud;
@@ -35,7 +35,6 @@ public class Sensor {
         this.ciudad = ciudad;
         this.pais = pais;
         this.estado = "activo";
-        this.fechaIni = fechaIni;
     }
 
     // ---- getters/setters ----

@@ -1,14 +1,11 @@
 package repository.mongo;
-import com.mongodb.client.MongoDatabase;
 import connections.MongoPool;
 import entity.Sensor;
-import entity.Usuario;
 import exceptions.ErrorConectionMongoException;
 import org.bson.Document;
 
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 
 public  class SensorRepository {
@@ -25,9 +22,11 @@ public  class SensorRepository {
         return instance;
     }
 
-    public void saveSensor(Sensor sensor) throws ErrorConectionMongoException {
+    public int saveSensor(Sensor sensor) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
+        int lastId = getLastId();
+        sensor.setId(lastId + 1);
         try {
             var collection = connection.getCollection(COLLECTION_NAME);
             Document newSensor = new Document()
@@ -39,11 +38,11 @@ public  class SensorRepository {
                     .append("ciudad", sensor.getCiudad())
                     .append("pais", sensor.getPais())
                     .append("estado", sensor.getEstado())
-                    .append("fechaIni", sensor.getFechaIni());
+                    .append("fechaIni", Timestamp.valueOf(sensor.getFechaIni()));
 
 
             collection.insertOne(newSensor);
-
+        return sensor.getId();
         } catch (Exception e) {
             throw new ErrorConectionMongoException("Error al guardar el sensor en MongoDB" + e.getMessage());
         }
@@ -61,6 +60,33 @@ public  class SensorRepository {
             throw new ErrorConectionMongoException("Error al obtener el sensor en MongoDB");
         }
         return sensor;
+    }
+    public void changeStateSensor(int idSensor) throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        try {
+            var collection = connection.getCollection(COLLECTION_NAME);
+            Document filter = new Document("id", idSensor);
+            Document sensorDoc = collection.find(filter).first();
+            String currentState = sensorDoc.getString("estado");
+            String newState = currentState.equals("activo") ? "inactivo" : "activo";
+            Document update = new Document("$set", new Document("estado", newState));
+            collection.updateOne(filter, update);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al cambiar el estado del sensor en MongoDB: " + e.getMessage());
+        }
+    }
+    public Sensor getSensorByCode(String code) throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        try {
+            var collection = connection.getCollection(COLLECTION_NAME);
+            Document filter = new Document("cod", code);
+            Document result = collection.find(filter).first();
+            return mapSensor(result);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al obtener el sensor por codigo en MongoDB: " + e.getMessage());
+        }
     }
     public List<Sensor> getSensorsByCity(String ciudad) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
@@ -120,10 +146,10 @@ public  class SensorRepository {
         List<Sensor> sensors = new java.util.ArrayList<>();
 
         try {
-            var resultSet = collection.find();
+            var resultSet = collection.find().limit(100).iterator();
 
-            while (resultSet.iterator().hasNext()) {
-                Document result = resultSet.iterator().next();
+            while (resultSet.hasNext()) {
+                Document result = resultSet.next();
                 Sensor sensor = mapSensor(result);
                 sensors.add(sensor);
             }
@@ -135,6 +161,20 @@ public  class SensorRepository {
         return sensors;
     }
 
+    private int getLastId() throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        var collection = connection.getCollection(COLLECTION_NAME);
+        try {
+            Document sort = new Document("id", -1);
+            Document result = collection.find().sort(sort).first();
+            if (result == null) return 0;
+            Integer id = result.getInteger("id");
+            return id != null ? id : 0;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     public Sensor mapSensor(Document doc){
         Sensor sensor = new Sensor();
         sensor.setId(doc.getInteger("id"));

@@ -1,14 +1,16 @@
 package ui;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-import service.ExecuteService;
-import service.UsuarioService;
-import service.CuentaCorrienteService;
-import service.FacturaService;
+import entity.Alerta;
+import exceptions.ErrorConectionMongoException;
+import service.*;
 import entity.Usuario;
 import entity.Factura;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class DashboardClientFrame extends JFrame {
@@ -17,9 +19,13 @@ public class DashboardClientFrame extends JFrame {
     private JPanel mainPanel;
     private CardLayout cardLayout;
     private UsuarioService usuarioService = new UsuarioService();
+    private final AlertaService alertaService;
 
-    public DashboardClientFrame(String token) {
+    public DashboardClientFrame(String token) throws ErrorConectionMongoException {
         this.userToken = token;
+        this.alertaService = new AlertaService();
+
+        alertaService.createAllAlerts();
 
         try {
             this.currentUser = usuarioService.validateToken(token);
@@ -46,6 +52,7 @@ public class DashboardClientFrame extends JFrame {
     // Create panels for client sections (requested by user)
     mainPanel.add(createExecuteProcessPanel(), "PROCESS");
     mainPanel.add(createExecuteServicePanel(), "SERVICE");
+    mainPanel.add(createShowAlertsPanel(),"ALERTS");
     mainPanel.add(createViewBalancePanel(), "BALANCE");
     mainPanel.add(createPayInvoicePanel(), "PAY_INVOICE");
     mainPanel.add(new ViewProcessTypesPanel(currentUser), "REQUEST_PROCESS");
@@ -91,8 +98,9 @@ public class DashboardClientFrame extends JFrame {
     // User-requested menu entries
     addMenuButton(menuPanel, "Solicitar Proceso", "REQUEST_PROCESS");
     addMenuButton(menuPanel, "Mis Solicitudes", "VIEW_REQUESTS");
-    addMenuButton(menuPanel, "Ejecutar Proceso", "PROCESS");
+    addMenuButton(menuPanel, "Ver Procesos Aprobados", "PROCESS");
     addMenuButton(menuPanel, "Ejecutar Servicio", "SERVICE");
+    addMenuButton(menuPanel, "Ver Alertas", "ALERTS");
     addMenuButton(menuPanel, "Ver Saldo", "BALANCE");
     addMenuButton(menuPanel, "Pagar Factura", "PAY_INVOICE");
     addMenuButton(menuPanel, "Agregar Fondos", "ADD_FUNDS");
@@ -205,30 +213,136 @@ public class DashboardClientFrame extends JFrame {
         return p;
     }
 
-    // --- New client-specific placeholder panels requested by the user ---
     private JPanel createExecuteProcessPanel() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
         p.setBackground(new Color(236, 240, 241));
 
-        JLabel title = new JLabel("Ejecutar Proceso");
+        JLabel title = new JLabel("Facturas Pagadas y Informes");
         title.setFont(new Font("Arial", Font.BOLD, 18));
         p.add(title, BorderLayout.NORTH);
 
-        JPanel center = new JPanel(new BorderLayout());
-        center.setBackground(new Color(236, 240, 241));
-        center.add(new JLabel("(Placeholder) Formulario para ejecutar un proceso"), BorderLayout.CENTER);
+        // Left: list of paid invoices
+        DefaultListModel<Factura> facturaListModel = new DefaultListModel<>();
+        JList<Factura> facturaList = new JList<>(facturaListModel);
+        facturaList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        facturaList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Factura) {
+                    Factura f = (Factura) value;
+                    String fechaStr = f.getFechaEmision() != null ? f.getFechaEmision().toString() : "N/A";
+                    Double total = f.getTotal() != null ? f.getTotal() : 0.0;
+                    String procesoNombre = (f.getProcesoFacturado() != null && f.getProcesoFacturado().getNombre() != null)
+                            ? f.getProcesoFacturado().getNombre() : "Sin proceso";
+                    setText(String.format("Factura #%d - $%.2f - %s - Proceso: %s",
+                            f.getId(), total, fechaStr, procesoNombre));
+                }
+                return c;
+            }
+        });
 
-    JButton runBtn = new JButton("Ejecutar");
-    // Visual-only: habilitado pero solo muestra tooltip (sin ejecutar lógica)
-    runBtn.setToolTipText("Acción visual: no implementada aún");
+        JScrollPane listScroll = new JScrollPane(facturaList);
+        listScroll.setPreferredSize(new Dimension(420, 300));
+
+        // Right: text area with proceso description / report
+        JTextArea reportArea = new JTextArea();
+        reportArea.setEditable(false);
+        reportArea.setLineWrap(true);
+        reportArea.setWrapStyleWord(true);
+        JScrollPane reportScroll = new JScrollPane(reportArea);
+        reportScroll.setBorder(BorderFactory.createTitledBorder("Informe / Descripción del Proceso"));
+        reportScroll.setPreferredSize(new Dimension(420, 300));
+
+        // Split pane to show list and report
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, listScroll, reportScroll);
+        split.setResizeWeight(0.5);
+        split.setContinuousLayout(true);
+
+        p.add(split, BorderLayout.CENTER);
+
+        // Bottom controls: refresh button
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottom.add(runBtn);
-
-        p.add(center, BorderLayout.CENTER);
+        bottom.setOpaque(false);
+        JButton refreshBtn = new JButton("Cargar Facturas Pagadas");
+        bottom.add(refreshBtn);
         p.add(bottom, BorderLayout.SOUTH);
+
+        // Selection listener to show proceso description
+        facturaList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                Factura sel = facturaList.getSelectedValue();
+                if (sel == null) {
+                    reportArea.setText("");
+                    return;
+                }
+                if (sel.getProcesoFacturado() != null) {
+                    String desc = sel.getProcesoFacturado().getDescripcion();
+                    reportArea.setText(desc != null ? desc : "(Sin descripción)");
+                } else {
+                    reportArea.setText("(No hay proceso asociado a esta factura)");
+                }
+            }
+        });
+
+        // Load paid invoices in background
+        refreshBtn.addActionListener(ev -> {
+            refreshBtn.setEnabled(false);
+            facturaListModel.clear();
+            reportArea.setText("Loading...");
+            new javax.swing.SwingWorker<List<Factura>, Void>() {
+                private Exception error;
+                @Override
+                protected List<Factura> doInBackground() {
+                    try {
+                        FacturaService fs = FacturaService.getInstance();
+                        return fs.getFacturasByUsuarioByPagadas(currentUser.getId());
+                    } catch (Exception ex) {
+                        this.error = ex;
+                        return new ArrayList<>();
+                    }
+                }
+                @Override
+                protected void done() {
+                    try {
+                        facturaListModel.clear();
+                        if (error != null) {
+                            reportArea.setText("");
+                            JOptionPane.showMessageDialog(p,
+                                    "Error cargando facturas: " + error.getMessage(),
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                        List<Factura> list = get();
+                        if (list == null || list.isEmpty()) {
+                            reportArea.setText("(No se encontraron facturas pagadas)");
+                            return;
+                        }
+                        for (Factura f : list) {
+                            facturaListModel.addElement(f);
+                        }
+                        reportArea.setText("(Seleccione una factura para ver el informe)");
+                    } catch (Exception ex) {
+                        reportArea.setText("");
+                        JOptionPane.showMessageDialog(p,
+                                "Error procesando resultado: " + ex.getMessage(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    } finally {
+                        refreshBtn.setEnabled(true);
+                    }
+                }
+            }.execute();
+        });
+
+        // initial load
+        refreshBtn.doClick();
+
         return p;
     }
+
 
     private JPanel createExecuteServicePanel() {
         JPanel p = new JPanel(new BorderLayout());
@@ -506,7 +620,7 @@ public class DashboardClientFrame extends JFrame {
                 
                 // Actualizar estado de la factura
                 FacturaService facturaService = new FacturaService();
-                facturaService.updateEstado(selectedFactura.getId(), "PAGADA");
+                facturaService.updateEstado(selectedFactura.getId(), "Pagada");
                 
                 JOptionPane.showMessageDialog(p,
                     "Factura pagada exitosamente",
@@ -663,7 +777,55 @@ public class DashboardClientFrame extends JFrame {
         }
     }
 
+    private JPanel createShowAlertsPanel() {
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
+
+        // Table
+        DefaultTableModel tableModel = new DefaultTableModel(
+                new String[]{"Cod", "Fecha", "Descripcion", "Estado"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int col) { return false; }
+        };
+        JTable table = new JTable(tableModel);
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+
+
+        // Service
+        final AlertaService alertaService = AlertaService.getInstance();
+
+        // Helper to load and show alerts
+        Runnable loadAlerts = () -> {
+            try {
+                List<Alerta> alerts = alertaService.checkAlerts();
+                SwingUtilities.invokeLater(() -> {
+                    tableModel.setRowCount(0);
+                    if (alerts == null) return;
+                    for (Alerta a : alerts) {
+                        if (a == null) continue;
+                        Object[] row = new Object[]{
+                                a.getSensor() != null ? a.getSensor().getCod() : null,
+                                a.getFecha() != null ? a.getFecha().toString() : null,
+                                a.getDescripcion(),
+                                a.getEstado()
+                        };
+                        tableModel.addRow(row);
+                    }
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                        "Error loading alerts: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE));
+            }
+        };
+
+
+        // initial load
+        new Thread(loadAlerts).start();
+
+        return panel;
+    }
     private void logout() {
+        alertaService.deleteSensorAlerts();
         try {
             usuarioService.logout(userToken);
             WelcomeFrame w = new WelcomeFrame();

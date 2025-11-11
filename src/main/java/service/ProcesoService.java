@@ -55,39 +55,52 @@ public class ProcesoService {
     * */
 
     @Transactional
-    public Factura ejectuarSolicitudYEmitirFactura(Usuario tecnico, SolicitudProceso solicitud,String ubicacion) {
-        if (tecnico == null) throw new IllegalArgumentException("Usuario tecnico no puede ser nulo");
+    public Factura ejectuarSolicitudYEmitirFactura(SolicitudProceso solicitud,String ubicacion) {
+
         MedicionService medicionService = MedicionService.getInstance();
 
-        if (!tecnico.getRol().getNombre().equals("Tecnico")) throw new SecurityException("Solo usuarios con rol 'tecnico' pueden asignar mediciones"); // Encima acá ya estás validando que sea tecnico u algo distinto
+
 
         try {
             // obtener la última solicitud pendiente
             List<SolicitudProceso> pendientes = solicitudRepo.findByEstadoIgnoreCase("pendiente");
             if (pendientes == null || pendientes.isEmpty())
                 throw new RuntimeException("No hay solicitudes pendientes");
-
+            Proceso proceso = solicitud.getProceso();
             int idProceso = solicitud.getProceso().getId();
 
             if(idProceso == 1){
                 Double min = medicionService.getMinByCity(ubicacion);
                 Double max = medicionService.getMaxByCity(ubicacion);
-                solicitud.getProceso().setDescripcion("Se obtuvieron las siguientes mediciones en la ciudad de " + ubicacion + ": \n Minima = " + min + " \n Maxima = " + max);
+                proceso.setDescripcion("Se obtuvieron las siguientes mediciones en la ciudad de " + ubicacion + ": \n Minima = " + min + " \n Maxima = " + max);
+
 
             }else if(idProceso == 2){
                 Double min = medicionService.getMinByCountry(ubicacion);
                 Double max = medicionService.getMaxByCountry(ubicacion);
-                solicitud.getProceso().setDescripcion("Se obtuvieron las siguientes mediciones en el país de " + ubicacion + ": \n Minima = " + min + " \n Maxima = " + max);
+                proceso.setDescripcion("Se obtuvieron las siguientes mediciones en el país de " + ubicacion + ": \n Minima = " + min + " \n Maxima = " + max);
+
 
             }else if(idProceso == 3){
-                Double hum = medicionService.getAverageHumidityBetweenDatesByCity(ubicacion, LocalDate.now().minusDays(7).atStartOfDay(), LocalDate.now().atStartOfDay());
-                Double temp = medicionService.getAverageTemperatureBetweenDatesByCity(ubicacion, LocalDate.now().minusDays(7).atStartOfDay(), LocalDate.now().atStartOfDay());
-                solicitud.getProceso().setDescripcion("Se obtuvo la siguiente medicion promedio en la ciudad de " + ubicacion + ":\n Promedio Temperatura = " + temp + " \n Promedio Humedad = " + hum);
+                Double hum = medicionService.getAverageHumidityBetweenDatesByCity(ubicacion, LocalDate.now().minusYears(1).atStartOfDay(), LocalDate.now().atStartOfDay());
+                Double temp = medicionService.getAverageTemperatureBetweenDatesByCity(ubicacion, LocalDate.now().minusYears(1).atStartOfDay(), LocalDate.now().atStartOfDay());
+                Double humPer = Math.floor((hum *100)/100.0);
+                Double tempPer = Math.floor(( temp*100)/ 100.0);
+                proceso.setDescripcion("Se obtuvo la siguiente medicion promedio en la ciudad de " + ubicacion + ":\n Promedio Temperatura = " + tempPer +"%"+ " \n Promedio Humedad = " + humPer+"%");
+                System.out.println("Temperatura país: " + temp);
+                System.out.println("Humedad país: " + hum);
+                System.out.println(idProceso);
+                System.out.println(proceso.getDescripcion());
             } else if (idProceso == 4) {
-                Double hum = medicionService.getAverageHumidityBetweenDatesByCountry(ubicacion, LocalDate.now().minusDays(7).atStartOfDay(), LocalDate.now().atStartOfDay());
-                Double temp = medicionService.getAverageTemperatureBetweenDatesByCountry(ubicacion, LocalDate.now().minusDays(7).atStartOfDay(), LocalDate.now().atStartOfDay());
-                solicitud.getProceso().setDescripcion("Se obtuvo la siguiente medicion promedio en el país de " + ubicacion + ":\n Promedio Temperatura = " + temp + " \n Promedio Humedad = " + hum);
-
+                Double hum = medicionService.getAverageHumidityBetweenDatesByCountry(ubicacion, LocalDate.now().minusYears(1).atStartOfDay(), LocalDate.now().atStartOfDay());
+                Double temp = medicionService.getAverageTemperatureBetweenDatesByCountry(ubicacion, LocalDate.now().minusYears(1).atStartOfDay(), LocalDate.now().atStartOfDay());
+                System.out.println("Temperatura país: " + temp);
+                System.out.println("Humedad país: " + hum);
+                Double humPer = Math.floor((hum *100)/100.0);
+                Double tempPer = Math.floor(( temp*100)/ 100.0);
+                proceso.setDescripcion("Se obtuvo la siguiente medicion promedio en el país de " + ubicacion + ":\n Promedio Temperatura = " + tempPer+"%" + " \n Promedio Humedad = " + humPer+"%");
+                System.out.println(idProceso);
+                System.out.println(proceso.getDescripcion());
             } else{
                 throw new RuntimeException("El id del proceso no es valido");
             }
@@ -96,22 +109,19 @@ public class ProcesoService {
 
 
             // actualizar la solicitud a completado y guardarla
-            solicitud.setEstado("completado");
+            solicitud.setEstado("Aprobado");
             SolicitudProceso saved = solicitudRepo.save(solicitud);
-
+            System.out.println("Solicitud guardada correctamente" + saved.getProceso());
             // crear la factura para el usuario que hizo la solicitud
-            Proceso proceso = saved.getProceso();
             Double total = (proceso != null) ? proceso.getCosto() : 0.0;
             Factura factura = new Factura(
                     saved.getUsuario(),
                     LocalDate.now(),
-                    "pendiente",
+                    "Pendiente",
                     proceso,
                     total, ubicacion
             );
 
-
-            // TODO: persistir factura si tenés un repositorio/DAO de Factura (p. ej. facturaRepo.save(factura))
             return factura;
         } catch (ErrorConectionMongoException e) {
             throw new RuntimeException("Mongo: error al procesar solicitud/factura", e);

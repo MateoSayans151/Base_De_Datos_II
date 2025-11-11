@@ -2,8 +2,11 @@ package ui;
 
 import javax.swing.*;
 import java.awt.*;
+
+import entity.Factura;
 import entity.SolicitudProceso;
 import entity.Usuario;
+import service.ProcesoService;
 import service.SolicitudProcesoService;
 import service.FacturaService;
 import java.util.List;
@@ -134,17 +137,28 @@ public class ManageProcessRequestsPanel extends JPanel {
             
         if (result == JOptionPane.OK_OPTION) {
             try {
+
                 // Aprobar la solicitud usando el usuario actual (técnico)
-                solicitudService.aprobarSolicitud(solicitud.getId(), currentUser);
-                // Crear factura usando la solicitud completa
-                facturaService.crearFacturaProceso(solicitud);
+                solicitudService.actualizarEstado(solicitud.getId(), "Aprobado");
+                ProcesoService procesoService = new ProcesoService();
+                Factura factura = new Factura();
+
+                if(solicitud.getCiudad() == null || solicitud.getCiudad().isEmpty()) {
+
+                    factura = procesoService.ejectuarSolicitudYEmitirFactura(solicitud,solicitud.getPais());
+                }else{
+                    factura = procesoService.ejectuarSolicitudYEmitirFactura(solicitud ,solicitud.getCiudad());
+                }
+
+                System.out.println(factura.getProcesoFacturado().getId() + " factura creada en UI" + factura.getProcesoFacturado().getDescripcion());
+                facturaService.crearFactura(factura);
                 loadPendingRequests();
                 JOptionPane.showMessageDialog(this, 
                     "Solicitud aprobada y factura creada exitosamente.\n" +
                     "Monto facturado: $" + solicitud.getProceso().getCosto());
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, 
-                    "Error al aprobar la solicitud: " + ex.getMessage(),
+                    "Error al aprobar la solicitud: Pepepepe " + ex.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
             }

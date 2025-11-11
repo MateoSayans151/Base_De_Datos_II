@@ -70,10 +70,7 @@ public class ProcessRequestFrame extends JFrame {
 
     private void loadProcesos() {
         try {
-            // For now, let's create some sample processes if none exist
-            if (procesoService.listarPorTipo("cualquiera").isEmpty()) {
-                createSampleProcesses();
-            }
+
             
             // Load all processes
             procesoService.listarPorTipo("cualquiera").forEach(listModel::addElement);
@@ -85,19 +82,6 @@ public class ProcessRequestFrame extends JFrame {
         }
     }
 
-    private void createSampleProcesses() {
-        try {
-            Proceso p1 = new Proceso("Process 1", "Sample process 1", "standard", 10000.0);
-            Proceso p2 = new Proceso("Process 2", "Sample process 2", "standard", 10000.0);
-            Proceso p3 = new Proceso("Process 3", "Sample process 3", "standard", 10000.0);
-            
-            procesoService.crear(p1);
-            procesoService.crear(p2);
-            procesoService.crear(p3);
-        } catch (ErrorConectionMongoException ex) {
-            ex.printStackTrace();
-        }
-    }
 
     private void requestProcess() {
         Proceso selectedProceso = procesoList.getSelectedValue();
@@ -113,7 +97,7 @@ public class ProcessRequestFrame extends JFrame {
             solicitudService.crearSolicitud(
                 currentUser,
                 selectedProceso,
-                "PENDIENTE"
+                "Pendiente"
             );
 
             JOptionPane.showMessageDialog(this,

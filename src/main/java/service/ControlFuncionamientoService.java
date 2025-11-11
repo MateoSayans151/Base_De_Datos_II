@@ -57,6 +57,29 @@ public class ControlFuncionamientoService {
 
 
     }
+    public void createControls() throws ErrorConectionMongoException {
+        SensorService sensorService = SensorService.getInstance();
+        List<Sensor> sensors = sensorService.getSensorsByState("inactivo");
+        int lastId = 0;
+        try {
+            for (Sensor sensor : sensors) {
+                ControlFuncionamiento control = new ControlFuncionamiento();
+                control.setSensor(sensor);
+                control.setId(lastId);
+                control.setFechaControl(LocalDate.now());
+                control.setObservaciones("Control automatico de sensor inactivo");
+                if(sensor.getEstado().equals("activo")){
+                    control.setEstado("funcionando");
+                }else{
+                    control.setEstado("fallo");
+                }
+                create(control);
+                lastId = control.getId() + 1;
+            }
+        } catch (ErrorConectionMongoException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public ControlFuncionamiento getById(int id) throws ErrorConectionMongoException {
         List<ControlFuncionamiento> all = repository.getAllControls();
@@ -83,15 +106,8 @@ public class ControlFuncionamientoService {
         return result;
     }
 
-    public List<ControlFuncionamiento> getByState(String estado) throws ErrorConectionMongoException {
-        List<ControlFuncionamiento> result = new ArrayList<>();
-        List<ControlFuncionamiento> all = repository.getAllControls();
-        if (all == null) return result;
-        for (ControlFuncionamiento c : all) {
-            if (c != null && estado != null && estado.equals(c.getEstado())) {
-                result.add(c);
-            }
-        }
-        return result;
+    public void deleteAll() throws ErrorConectionMongoException {
+        repository.deleteAllControls();
     }
+
 }
