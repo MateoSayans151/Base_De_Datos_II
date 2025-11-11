@@ -21,6 +21,10 @@ public class SolicitudProceso {
     private LocalDateTime fechaSolicitud; // Fecha y hora en que se realizó la solicitud
 
     private String estado; // "pendiente" o "completado"
+    
+    // Ubicación solicitada: ciudad y/o país (opcional)
+    private String ciudad;
+    private String pais;
 
     public SolicitudProceso() {}
 
@@ -29,6 +33,15 @@ public class SolicitudProceso {
         this.proceso = proceso;
         this.fechaSolicitud = fechaSolicitud;
         this.estado = estado;
+    }
+
+    public SolicitudProceso(Usuario usuario, Proceso proceso, LocalDateTime fechaSolicitud, String estado, String ciudad, String pais) {
+        this.usuario = usuario;
+        this.proceso = proceso;
+        this.fechaSolicitud = fechaSolicitud;
+        this.estado = estado;
+        this.ciudad = ciudad;
+        this.pais = pais;
     }
 
     // --- Getters y Setters ---
@@ -70,5 +83,21 @@ public class SolicitudProceso {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public String getCiudad() {
+        return ciudad;
+    }
+
+    public void setCiudad(String ciudad) {
+        this.ciudad = ciudad;
+    }
+
+    public String getPais() {
+        return pais;
+    }
+
+    public void setPais(String pais) {
+        this.pais = pais;
     }
 }

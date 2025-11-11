@@ -23,6 +23,25 @@ public class ProcesoRepository {
         return instance;
     }
 
+    public List<Proceso> obtenerTodosLosProcesos() throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        List<Proceso> procesos = new ArrayList<>();
+        try {
+            MongoCollection<Document> collection = connection.getCollection(COLLECTION_NAME);
+            var cursor = collection.find();
+            for (Document doc : cursor) {
+                Proceso proceso = mappearProceso(doc);
+                if (proceso != null) {
+                    procesos.add(proceso);
+                }
+            }
+        } catch (Exception e) {
+            throw new ErrorConectionMongoException("Error al obtener todos los procesos de MongoDB: " + e.getMessage());
+        }
+        return procesos;
+    }
+
     public void crearProceso(Proceso proceso) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
@@ -90,6 +109,24 @@ public class ProcesoRepository {
             e.printStackTrace();
         }
         return procesos;
+    }
+
+    public void actualizarProceso(Proceso proceso) throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        try {
+            MongoCollection<Document> collection = connection.getCollection(COLLECTION_NAME);
+            Document filter = new Document("id", proceso.getId());
+            Document update = new Document("$set", new Document()
+                    .append("nombre", proceso.getNombre())
+                    .append("descripcion", proceso.getDescripcion())
+                    .append("tipo", proceso.getTipo())
+                    .append("costo", proceso.getCosto()));
+
+            collection.updateOne(filter, update);
+        } catch (Exception e) {
+            throw new ErrorConectionMongoException("Error al actualizar el proceso en MongoDB: " + e.getMessage());
+        }
     }
 
     public Proceso mappearProceso(Document doc) {

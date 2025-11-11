@@ -7,7 +7,6 @@ import entity.Usuario;
 import exceptions.ErrorConectionMongoException;
 import org.bson.Document;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +16,21 @@ public class GrupoRepository {
     private final String COLLECTION_NAME = "grupo";
 
     private GrupoRepository() {
+    }
+
+    private int getLastId() throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        var collection = connection.getCollection(COLLECTION_NAME);
+        try {
+            Document sort = new Document("id", -1);
+            Document result = collection.find().sort(sort).first();
+            if (result == null) return 0;
+            Integer id = result.getInteger("id");
+            return id != null ? id : 0;
+        } catch (Exception e) {
+            throw new ErrorConectionMongoException("Error al obtener lastId de grupos: " + e.getMessage());
+        }
     }
 
     public static GrupoRepository getInstance() {
@@ -30,6 +44,11 @@ public class GrupoRepository {
         var connection = mongoPool.getConnection();
         try {
             var collection = connection.getCollection(COLLECTION_NAME);
+
+            // Assign an incremental id to the group (similar to UsuarioRepository)
+            int lastId = getLastId();
+            grupo.setId(lastId + 1);
+
             Document newGrupo = new Document()
                     .append("id", grupo.getId())
                     .append("nombreGrupo", grupo.getNombre());
@@ -110,16 +129,49 @@ public class GrupoRepository {
         var connection = mongoPool.getConnection();
         try {
             var collection = connection.getCollection(COLLECTION_NAME);
-            Document mensajeDoc = new Document()
-                    .append("idMensaje", mensaje.getId())
-                    .append("contenido", mensaje.getContenido())
-                    .append("fechaEnvio", mensaje.getFechaEnvio());
+            // Ensure the message has an id for the group mensajes array. If not, generate one
+            int idMensaje = mensaje.getId() != 0 ? mensaje.getId() : (int)(System.currentTimeMillis() % Integer.MAX_VALUE);
+        Document mensajeDoc = new Document()
+            .append("idMensaje", idMensaje)
+            .append("contenido", mensaje.getContenido())
+            .append("fechaEnvio", mensaje.getFechaEnvio());
+
+        // include remitente info when available
+        if (mensaje.getRemitente() != null) {
+        Document remitenteDoc = new Document()
+            .append("id", mensaje.getRemitente().getId())
+            .append("nombre", mensaje.getRemitente().getNombre())
+            .append("mail", mensaje.getRemitente().getMail());
+        mensajeDoc.append("remitente", remitenteDoc);
+        }
 
             Document filter = new Document("id", grupoId);
             Document update = new Document("$push", new Document("mensajes", mensajeDoc));
             collection.updateOne(filter, update);
         } catch (Exception e) {
             System.err.println("Error al agregar el mensaje al grupo en MongoDB: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Add a user to the group's usuarios array.
+     */
+    public void addUserToGroup(int grupoId, Usuario usuario) throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        try {
+            var collection = connection.getCollection(COLLECTION_NAME);
+            Document du = new Document()
+                    .append("id", usuario.getId())
+                    .append("nombre", usuario.getNombre())
+                    .append("mail", usuario.getMail())
+                    .append("estado", usuario.getEstado() == null ? "" : usuario.getEstado().toLowerCase());
+
+            Document filter = new Document("id", grupoId);
+            Document update = new Document("$push", new Document("usuarios", du));
+            collection.updateOne(filter, update);
+        } catch (Exception e) {
+            throw new ErrorConectionMongoException("Error al agregar usuario al grupo en MongoDB: " + e.getMessage());
         }
     }
     public List<Mensaje> getMessagesByGroupId(int grupoId) throws ErrorConectionMongoException {
@@ -132,6 +184,7 @@ public class GrupoRepository {
             Document result = collection.find(filter).first();
             if (result != null) {
                 System.out.println("Estoy aca");
+                @SuppressWarnings("unchecked")
                 List<Document> mensajesDocs = (List<Document>) result.get("mensajes");
                 if (mensajesDocs != null) {
                     for (Document mdoc : mensajesDocs) {
@@ -139,6 +192,15 @@ public class GrupoRepository {
                         m.setId(mdoc.getInteger("idMensaje"));
                         m.setContenido(mdoc.getString("contenido"));
                         m.setFechaEnvio(mdoc.getDate("fechaEnvio").toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+                        // map remitente if embedded
+                        Document remitenteDoc = mdoc.get("remitente", Document.class);
+                        if (remitenteDoc != null) {
+                            Usuario remitente = new Usuario();
+                            remitente.setId(remitenteDoc.getInteger("id"));
+                            remitente.setNombre(remitenteDoc.getString("nombre"));
+                            remitente.setMail(remitenteDoc.getString("mail"));
+                            m.setRemitente(remitente);
+                        }
                         mensajes.add(m);
                     }
                 }

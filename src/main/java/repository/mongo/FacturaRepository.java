@@ -2,6 +2,7 @@ package repository.mongo;
 
 import connections.MongoPool;
 import entity.Factura;
+import entity.Mensaje;
 import entity.Proceso;
 import entity.Usuario;
 import exceptions.ErrorConectionMongoException;
@@ -34,27 +35,78 @@ public class FacturaRepository {
         var connection = mongoPool.getConnection();
         try {
             var collection = connection.getCollection(COLLECTION_NAME);
+            // Ensure factura has an id
+            if (factura.getId() == 0) {
+                int lastId = getLastId();
+                factura.setId(lastId + 1);
+            }
+
+            // Convert LocalDate to java.util.Date for MongoDB
+            java.util.Date fechaDate = null;
+            if (factura.getFechaEmision() != null) {
+                fechaDate = java.util.Date.from(factura.getFechaEmision().atStartOfDay(ZoneId.systemDefault()).toInstant());
+            }
+
             Document facturaDoc = new Document()
                     .append("id", factura.getId())
-                    .append("fechaEmision", factura.getFechaEmision())
-                    .append("procesosFacturados", factura.getProcesosFacturados())
+                    .append("fechaEmision", fechaDate)
                     .append("total", factura.getTotal())
                     .append("estado", factura.getEstado());
 
             if (factura.getUsuario() != null) {
                 Document usuDoc = new Document()
-                        .append("id", factura.getUsuario().getId())
+                        .append("idUsuario", factura.getUsuario().getId())
                         .append("nombre", factura.getUsuario().getNombre())
                         .append("mail", factura.getUsuario().getMail());
                 facturaDoc.append("usuario", usuDoc);
+            }       
+            if (factura.getProcesoFacturado() != null) {
+                Proceso p = factura.getProcesoFacturado();
+                Document pd = new Document()
+                        .append("idProceso", p.getId())
+                        .append("nombre", p.getNombre())
+                        .append("costo", p.getCosto())
+                        .append("descripcion", p.getDescripcion());
+                facturaDoc.append("procesosFacturados", pd);
             }
 
             collection.insertOne(facturaDoc);
         } catch (Exception e) {
-            throw new ErrorConectionMongoException("Error al guardar la factura en MongoDB");
+            throw new ErrorConectionMongoException("Error al crear la factura en MongoDB: " + e.getMessage());      
         }
     }
 
+    private int getLastId() throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        var collection = connection.getCollection(COLLECTION_NAME);
+        try {
+            Document sort = new Document("id", -1);
+            Document result = collection.find().sort(sort).first();
+            if (result == null) return 0;
+            Integer id = result.getInteger("id");
+            return id != null ? id : 0;
+        } catch (Exception e) {
+            throw new ErrorConectionMongoException(e.getMessage());
+        }
+    }
+    public List<Factura> getUserFacturas(int usuarioId) throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        System.out.println("ESTOY ACA WACHO");
+        List<Factura> facturas = new ArrayList<>();
+        try {
+            var collection = connection.getCollection(COLLECTION_NAME);
+            var cursor = collection.find(new Document("usuario.idUsuario", usuarioId)).iterator();
+            while (cursor.hasNext()) {
+                Document doc = cursor.next();
+                facturas.add(convertDocumentToFactura(doc));
+            }
+        } catch (Exception e) {
+            throw new ErrorConectionMongoException("Error al obtener facturas del usuario: " + e.getMessage());
+        }
+        return facturas;
+    }
     public Factura obtenerFactura(int id) throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();
@@ -97,20 +149,17 @@ public class FacturaRepository {
         }
 
 
-        // Handle procesos facturados
-        List<Document> procDocs = (List<Document>) doc.get("procesosFacturados");
-        if (procDocs != null) {
-            List<Proceso> procesos = new ArrayList<>();
-            for (Document procDoc : procDocs) {
-                Proceso proceso = new Proceso();
-                proceso.setId(procDoc.getInteger("id"));
-                proceso.setNombre(procDoc.getString("nombre"));
-                proceso.setDescripcion(procDoc.getString("descripcion"));
-                proceso.setTipo(procDoc.getString("tipo"));
-                proceso.setCosto(procDoc.getDouble("costo"));
-                procesos.add(proceso);
-            }
-            factura.setProcesosFacturados(procesos);
+        // Handle procesos facturados (stored as a single Document object)
+        Object procesosObj = doc.get("procesosFacturados");
+        if (procesosObj != null && procesosObj instanceof Document) {
+            Document procDoc = (Document) procesosObj;
+            Proceso proceso = new Proceso();
+            proceso.setId(procDoc.getInteger("idProceso") != null ? procDoc.getInteger("idProceso") : procDoc.getInteger("id"));
+            proceso.setNombre(procDoc.getString("nombre"));
+            proceso.setDescripcion(procDoc.getString("descripcion"));
+            proceso.setTipo(procDoc.getString("tipo"));
+            proceso.setCosto(procDoc.getDouble("costo"));
+            factura.setProcesoFacturado(proceso);
         }
 
         if (doc.containsKey("total")) {
@@ -143,19 +192,17 @@ public class FacturaRepository {
             factura.setFechaEmision(ldt);
         }
 
-        List<Document> procDocs = (List<Document>) doc.get("procesosFacturados");
-        if (procDocs != null) {
-            List<Proceso> procesos = new ArrayList<>();
-            for (Document procDoc : procDocs) {
-                Proceso proceso = new Proceso();
-                proceso.setId(procDoc.getInteger("id"));
-                proceso.setNombre(procDoc.getString("nombre"));
-                proceso.setDescripcion(procDoc.getString("descripcion"));
-                proceso.setTipo(procDoc.getString("tipo"));
-                proceso.setCosto(procDoc.getDouble("costo"));
-                procesos.add(proceso);
-            }
-            factura.setProcesosFacturados(procesos);
+        // Handle procesos facturados (stored as a single Document object)
+        Object procesosObj = doc.get("procesosFacturados");
+        if (procesosObj != null && procesosObj instanceof Document) {
+            Document procDoc = (Document) procesosObj;
+            Proceso proceso = new Proceso();
+            proceso.setId(procDoc.getInteger("idProceso") != null ? procDoc.getInteger("idProceso") : procDoc.getInteger("id"));
+            proceso.setNombre(procDoc.getString("nombre"));
+            proceso.setDescripcion(procDoc.getString("descripcion"));
+            proceso.setTipo(procDoc.getString("tipo"));
+            proceso.setCosto(procDoc.getDouble("costo"));
+            factura.setProcesoFacturado(proceso);
         }
 
         if (doc.containsKey("total")) {
@@ -173,7 +220,7 @@ public class FacturaRepository {
         List<Factura> facturas = new ArrayList<>();
         try {
             var collection = connection.getCollection(COLLECTION_NAME);
-            var query = new Document("usuario.id", usuarioId);
+            var query = new Document("usuario.idUsuario", usuarioId);
             var cursor = collection.find(query);
             
             for (Document doc : cursor) {

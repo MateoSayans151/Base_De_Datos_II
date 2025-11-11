@@ -48,6 +48,8 @@ public class DashboardClientFrame extends JFrame {
     mainPanel.add(createExecuteServicePanel(), "SERVICE");
     mainPanel.add(createViewBalancePanel(), "BALANCE");
     mainPanel.add(createPayInvoicePanel(), "PAY_INVOICE");
+    mainPanel.add(new ViewProcessTypesPanel(currentUser), "REQUEST_PROCESS");
+    mainPanel.add(new ViewProcessRequestsPanel(currentUser), "VIEW_REQUESTS");
     mainPanel.add(createAddFundsPanel(), "ADD_FUNDS");
         JPanel menuPanel = createMenuPanel();
 
@@ -87,6 +89,8 @@ public class DashboardClientFrame extends JFrame {
         menuPanel.add(Box.createRigidArea(new Dimension(0,20)));
 
     // User-requested menu entries
+    addMenuButton(menuPanel, "Solicitar Proceso", "REQUEST_PROCESS");
+    addMenuButton(menuPanel, "Mis Solicitudes", "VIEW_REQUESTS");
     addMenuButton(menuPanel, "Ejecutar Proceso", "PROCESS");
     addMenuButton(menuPanel, "Ejecutar Servicio", "SERVICE");
     addMenuButton(menuPanel, "Ver Saldo", "BALANCE");
@@ -384,10 +388,12 @@ public class DashboardClientFrame extends JFrame {
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof Factura) {
                     Factura factura = (Factura) value;
+                    String fechaStr = factura.getFechaEmision() != null ? factura.getFechaEmision().toString() : "N/A";
+                    Double total = factura.getTotal() != null ? factura.getTotal() : 0.0;
                     setText(String.format("Factura #%d - $%.2f - Fecha: %s",
                         factura.getId(),
-                        factura.getTotal(),
-                        factura.getFechaEmision().toString()));
+                        total,
+                        fechaStr));
                 }
                 return c;
             }
@@ -420,26 +426,57 @@ public class DashboardClientFrame extends JFrame {
         // Botón de actualizar
         JButton refreshBtn = new JButton("Actualizar");
         refreshBtn.addActionListener(e -> {
-            try {
-                // Actualizar saldo
-                double saldo = consultarSaldo();
-                saldoLabel.setText(String.format("Saldo disponible: $%.2f", saldo));
-                
-                // Actualizar lista de facturas
-                FacturaService facturaService = new FacturaService();
-                List<Factura> facturas = facturaService.getFacturasByUsuario(currentUser.getId());
-                facturaListModel.clear();
-                for (Factura f : facturas) {
-                    if ("PENDIENTE".equalsIgnoreCase(f.getEstado())) {
-                        facturaListModel.addElement(f);
+            // Ejecutar en background para no bloquear la UI
+            refreshBtn.setEnabled(false);
+            facturaListModel.clear();
+            new javax.swing.SwingWorker<List<Factura>, Void>() {
+                private Exception error;
+
+                @Override
+                protected List<Factura> doInBackground() {
+                    try {
+                        // Actualizar saldo
+                        double saldo = consultarSaldo();
+                        SwingUtilities.invokeLater(() -> saldoLabel.setText(String.format("Saldo disponible: $%.2f", saldo)));
+
+                        // Obtener facturas desde el servicio
+                        FacturaService facturaService = FacturaService.getInstance();
+                        var factura = facturaService.getFacturasByUsuario(currentUser.getId());
+                        System.out.println(factura);
+                        return factura;
+                    } catch (Exception ex) {
+                        this.error = ex;
+                        return new java.util.ArrayList<>();
                     }
                 }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(p,
-                    "Error al actualizar: " + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-            }
+
+                @Override
+                protected void done() {
+                    try {
+                        facturaListModel.clear();
+                        if (error != null) {
+                            JOptionPane.showMessageDialog(p,
+                                "Error al actualizar: " + error.getMessage(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                        List<Factura> facturas = get();
+                        for (Factura f : facturas) {
+                            if (f != null && "PENDIENTE".equalsIgnoreCase(f.getEstado())) {
+                                facturaListModel.addElement(f);
+                            }
+                        }
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(p,
+                            "Error al actualizar: " + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                    } finally {
+                        refreshBtn.setEnabled(true);
+                    }
+                }
+            }.execute();
         });
         
         JButton payBtn = new JButton("Pagar Factura Seleccionada");
@@ -591,8 +628,8 @@ public class DashboardClientFrame extends JFrame {
     // Helper methods for cuenta corriente operations
     private double consultarSaldo() {
         try {
-            CuentaCorrienteService ccService = new CuentaCorrienteService();
-            return ccService.consultarSaldo(currentUser.getId());
+            CuentaCorrienteService ccService = CuentaCorrienteService.getInstance();
+            return ccService.obtenerSaldo(currentUser.getId());
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                 "Error al consultar saldo: " + e.getMessage(),
@@ -616,8 +653,8 @@ public class DashboardClientFrame extends JFrame {
 
     private void retirarFondos(double monto) {
         try {
-            CuentaCorrienteService ccService = new CuentaCorrienteService();
-            ccService.retirarFondos(currentUser.getId(), monto);
+            CuentaCorrienteService ccService = CuentaCorrienteService.getInstance();
+            ccService.debitarFondos(currentUser.getId(), monto);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                 "Error al retirar fondos: " + e.getMessage(),

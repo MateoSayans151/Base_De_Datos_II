@@ -44,6 +44,13 @@ public class GrupoService {
         return grupoRepository.getMessagesByGroupId(grupoId);
     }
 
+    /**
+     * Add a participant (Usuario) to an existing group.
+     */
+    public void addParticipantToGroup(int grupoId, Usuario usuario) throws ErrorConectionMongoException {
+        grupoRepository.addUserToGroup(grupoId, usuario);
+    }
+
     // Backwards-compatible wrapper used by UI
     public java.util.List<Grupo> getGruposByUsuario(Usuario usuario) {
         try {

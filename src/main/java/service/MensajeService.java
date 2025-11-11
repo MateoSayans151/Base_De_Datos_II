@@ -2,6 +2,7 @@ package service;
 
 import entity.Mensaje;
 import entity.Usuario;
+import service.GrupoService;
 import entity.Grupo;
 import exceptions.ErrorConectionMongoException;
 import repository.mongo.MensajesRepository;
@@ -13,6 +14,7 @@ public class MensajeService {
 
     public static MensajeService instance;
     private static MensajesRepository mensajesRepository = MensajesRepository.getInstance();
+    private static GrupoService grupoService = GrupoService.getInstance();
 
     public MensajeService() {}
 
@@ -37,15 +39,19 @@ public class MensajeService {
         createMensaje(mensaje);
     }
 
-    public void enviarMensajeGrupo(Usuario remitente, Grupo grupo, String contenido) throws ErrorConectionMongoException {
+    /**
+     * Send a message to a group: delegate to GrupoService which will store the
+     * message inside the group's `mensajes` array in MongoDB.
+     */
+    public void enviarMensajeGrupo(Usuario remitente, int grupoId, String contenido) throws ErrorConectionMongoException {
         Mensaje mensaje = new Mensaje();
         mensaje.setRemitente(remitente);
-        mensaje.setGrupo(grupo);
         mensaje.setContenido(contenido);
         mensaje.setFechaEnvio(LocalDateTime.now());
-        // Database expects 'grupal' for group messages
         mensaje.setTipo("grupal");
-        createMensaje(mensaje);
+
+        // Delegate to GrupoService to append message into group's mensajes array
+        grupoService.addMessageToGroup(grupoId, mensaje);
     }
 
     public List<Mensaje> getMensajesPorRemitente(int remitenteId) throws ErrorConectionMongoException {
@@ -56,7 +62,24 @@ public class MensajeService {
         return mensajesRepository.obtenerMensajesPorDestinatario(destinatarioId);
     }
 
-    public List<Mensaje> getMensajesPorGrupo(Grupo grupo) throws ErrorConectionMongoException {
-        return mensajesRepository.obtenerMensajesPorGrupo(grupo);
+    /**
+     * Retrieve messages for a group by delegating to GrupoService.
+     */
+    public List<Mensaje> getMensajesPorGrupo(int grupoId) throws ErrorConectionMongoException {
+        return grupoService.getMessagesFromGroup(grupoId);
+    }
+
+    /**
+     * Create a new group (uses GrupoService).
+     */
+    public Grupo crearGrupo(String nombre, Usuario creador) {
+        return grupoService.crearGrupo(nombre, creador);
+    }
+
+    /**
+     * Add a participant to a group (uses GrupoService).
+     */
+    public void agregarParticipanteAGrupo(int grupoId, Usuario usuario) throws ErrorConectionMongoException {
+        grupoService.addParticipantToGroup(grupoId, usuario);
     }
 }

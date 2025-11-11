@@ -99,9 +99,10 @@ public class UsuarioRepository {
 
         try {
             var resultSet = collection.find();
+            var iterator = resultSet.iterator();  // ✅ Obtener el iterador UNA SOLA VEZ
 
-            while (resultSet.iterator().hasNext()) {
-                Document result = resultSet.iterator().next();
+            while (iterator.hasNext()) {
+                Document result = iterator.next();
                 Usuario user = mapearUsuario(result);
                 usuarios.add(user);
             }
@@ -112,6 +113,37 @@ public class UsuarioRepository {
 
         return usuarios;
     }
+
+    public void deleteUser(int userId) throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        var collection = connection.getCollection(COLLECTION_NAME);
+
+        try {
+            Document filter = new Document("id", userId);
+            collection.deleteOne(filter);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al eliminar usuario: " + e.getMessage(), e);
+        }
+    }
+
+    public void updateUserRole(int userId, Rol newRol) throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var connection = mongoPool.getConnection();
+        var collection = connection.getCollection(COLLECTION_NAME);
+
+        try {
+            Document filter = new Document("id", userId);
+            Document rolDoc = new Document()
+                    .append("idRol", newRol.getId())
+                    .append("nombre", newRol.getNombre());
+            Document update = new Document("$set", new Document("rol", rolDoc));
+            collection.updateOne(filter, update);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al actualizar rol del usuario: " + e.getMessage(), e);
+        }
+    }
+
     private int getLastId() throws ErrorConectionMongoException {
         MongoPool mongoPool = MongoPool.getInstance();
         var connection = mongoPool.getConnection();

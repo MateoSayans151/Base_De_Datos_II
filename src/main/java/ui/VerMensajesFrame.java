@@ -2,7 +2,9 @@ package ui;
 
 import entity.Mensaje;
 import entity.Usuario;
+import entity.Grupo;
 import service.MensajeService;
+import service.GrupoService;
 import exceptions.ErrorConectionMongoException;
 
 import javax.swing.*;
@@ -14,6 +16,8 @@ import java.util.List;
 public class VerMensajesFrame extends JFrame {
     private final Usuario usuarioActual;
     private final MensajeService mensajeService;
+    private final GrupoService grupoService;
+    private DefaultTableModel modeloGrupos;
     private JTable mensajesTable;
     private JTabbedPane tabbedPane;
     private DefaultTableModel modeloRecibidos;
@@ -23,6 +27,7 @@ public class VerMensajesFrame extends JFrame {
     public VerMensajesFrame(Usuario usuario) {
         this.usuarioActual = usuario;
         this.mensajeService = MensajeService.getInstance();
+        this.grupoService = GrupoService.getInstance();
         setupUI();
         cargarMensajes();
     }
@@ -44,8 +49,12 @@ public class VerMensajesFrame extends JFrame {
         JPanel enviadosPanel = crearPanelMensajes("Enviados");
         modeloEnviados = (DefaultTableModel) ((JTable)((JScrollPane)enviadosPanel.getComponent(0)).getViewport().getView()).getModel();
 
-        tabbedPane.addTab("Mensajes Recibidos", recibidosPanel);
-        tabbedPane.addTab("Mensajes Enviados", enviadosPanel);
+    tabbedPane.addTab("Mensajes Recibidos", recibidosPanel);
+    tabbedPane.addTab("Mensajes Enviados", enviadosPanel);
+
+    // Panel de mensajes de grupo
+    JPanel gruposPanel = crearPanelMensajesGrupo();
+    tabbedPane.addTab("Mensajes de Grupo", gruposPanel);
 
         // Top panel with title + action buttons
         JPanel topPanel = new JPanel(new BorderLayout());
@@ -105,6 +114,34 @@ public class VerMensajesFrame extends JFrame {
         return panel;
     }
 
+    private JPanel crearPanelMensajesGrupo() {
+        JPanel panel = new JPanel(new BorderLayout());
+
+        // Crear modelo de tabla para mensajes de grupo
+        modeloGrupos = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        modeloGrupos.addColumn("Fecha");
+        modeloGrupos.addColumn("Grupo");
+        modeloGrupos.addColumn("De");
+        modeloGrupos.addColumn("Mensaje");
+
+        JTable tabla = new JTable(modeloGrupos);
+        tabla.getColumnModel().getColumn(0).setPreferredWidth(150);
+        tabla.getColumnModel().getColumn(1).setPreferredWidth(150);
+        tabla.getColumnModel().getColumn(2).setPreferredWidth(150);
+        tabla.getColumnModel().getColumn(3).setPreferredWidth(400);
+        tabla.getColumnModel().getColumn(3).setCellRenderer(new TextAreaRenderer());
+
+        JScrollPane scrollPane = new JScrollPane(tabla);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
+    }
+
     private void cargarMensajes() {
         try {
             // Limpiar tablas
@@ -133,6 +170,22 @@ public class VerMensajesFrame extends JFrame {
                         mensaje.getFechaEnvio().format(formatter),
                         mensaje.getDestinatario().getNombre() + " (" + mensaje.getDestinatario().getMail() + ")",
                         mensaje.getContenido()
+                    });
+                }
+            }
+
+            // Cargar mensajes de grupos a los que pertenece el usuario
+            if (modeloGrupos != null) modeloGrupos.setRowCount(0);
+            List<Grupo> grupos = grupoService.getGruposByUsuario(usuarioActual);
+            for (Grupo grupo : grupos) {
+                List<Mensaje> mensajesGrupo = mensajeService.getMensajesPorGrupo(grupo.getId());
+                for (Mensaje m : mensajesGrupo) {
+                    String remitente = m.getRemitente() != null ? m.getRemitente().getNombre() + " (" + m.getRemitente().getMail() + ")" : "";
+                    modeloGrupos.addRow(new Object[]{
+                            m.getFechaEnvio() != null ? m.getFechaEnvio().format(formatter) : "",
+                            grupo.getNombre(),
+                            remitente,
+                            m.getContenido()
                     });
                 }
             }

@@ -3,7 +3,6 @@ package ui;
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
-import java.util.ArrayList;
 import java.time.LocalDate;
 import entity.*;
 import service.*;
@@ -109,18 +108,17 @@ public class ProcessApprovalFrame extends JFrame {
                 solicitudService.actualizarEstado(selectedSolicitud.getId(), "APROBADO");
                 
                 // Create invoice
-                List<Proceso> procesos = new ArrayList<>();
-                procesos.add(selectedSolicitud.getProceso());
-                
                 Factura factura = new Factura(
                     selectedSolicitud.getUsuario(),
                     LocalDate.now(),
-                    "PENDIENTE",
-                    procesos,
-                    selectedSolicitud.getProceso().getCosto()
+                    "Pendiente",
+                    selectedSolicitud.getProceso(),
+                    selectedSolicitud.getProceso().getCosto(),
+                    "Proceso"
                 );
+                factura.setDescripcion("Factura por proceso: " + selectedSolicitud.getProceso().getNombre());
                 
-                facturaService.createFactura(factura);
+                facturaService.crearFactura(factura);
 
                 JOptionPane.showMessageDialog(this,
                     "Request approved and invoice created.",

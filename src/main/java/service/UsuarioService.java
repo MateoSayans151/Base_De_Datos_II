@@ -1,6 +1,7 @@
 package service;
 
 import entity.Usuario;
+import entity.Rol;
 import exceptions.ErrorConectionMongoException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
@@ -25,9 +26,12 @@ public class UsuarioService {
     // Backwards-compatible helper used by UI code. Wraps checked exceptions
     public java.util.List<Usuario> getAllUsuarios() {
         try {
+            System.out.println("[UsuarioService] Llamando a getAll() para obtener todos los usuarios...");
             return getAll();
         } catch (ErrorConectionMongoException e) {
             // If Mongo is not available, return empty list to keep UI responsive
+            System.err.println("[UsuarioService ERROR] No se pudo conectar a MongoDB: " + e.getMessage());
+            e.printStackTrace();
             return new java.util.ArrayList<>();
         }
     }
@@ -99,6 +103,14 @@ public class UsuarioService {
     }
     public void logout(String token) {
         inicioSesionRepository.eliminarSesion(token);
+    }
+
+    public void deleteUser(int userId) throws ErrorConectionMongoException {
+        UsuarioRepository.getInstance().deleteUser(userId);
+    }
+
+    public void updateUserRole(int userId, Rol newRol) throws ErrorConectionMongoException {
+        UsuarioRepository.getInstance().updateUserRole(userId, newRol);
     }
 
     private String hashPassword(String password) {
