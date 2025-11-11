@@ -18,7 +18,6 @@ import java.util.Optional;
 public class LoginFrame extends JFrame {
     private JTextField emailField;
     private JPasswordField passwordField;
-    private JComboBox<String> roleComboBox;
     private JButton loginButton;
     private JButton registerButton;
     private String currentToken;
@@ -31,7 +30,7 @@ public class LoginFrame extends JFrame {
         
         setTitle("Polyglot Persistence - Login");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(400, 300);
+        setSize(400, 250);
         setLocationRelativeTo(null);
         setResizable(false);
 
@@ -59,7 +58,7 @@ public class LoginFrame extends JFrame {
         gbc.gridx = 1;
         panel.add(emailField, gbc);
 
-    // Password
+        // Password
         gbc.gridx = 0;
         gbc.gridy = 2;
         panel.add(new JLabel("Password:"), gbc);
@@ -67,18 +66,10 @@ public class LoginFrame extends JFrame {
         gbc.gridx = 1;
         panel.add(passwordField, gbc);
 
-    // Role selection (used during registration)
-    gbc.gridx = 0;
-    gbc.gridy = 3;
-    panel.add(new JLabel("Role:"), gbc);
-    roleComboBox = new JComboBox<>(new String[]{"Cliente", "Admin", "Tecnico"});
-    gbc.gridx = 1;
-    panel.add(roleComboBox, gbc);
-
-    // Botones
-    gbc.gridx = 0;
-    gbc.gridy = 4;
-    gbc.gridwidth = 2;
+        // Botones
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
         JPanel buttonPanel = new JPanel();
         buttonPanel.setBackground(new Color(240, 240, 240));
 
@@ -86,8 +77,11 @@ public class LoginFrame extends JFrame {
         loginButton.addActionListener(this::handleLogin);
         buttonPanel.add(loginButton);
 
-        registerButton = new JButton("Register");
-        registerButton.addActionListener(this::handleRegister);
+        registerButton = new JButton("Create Account");
+        registerButton.addActionListener(e -> {
+            RegisterFrame registerFrame = new RegisterFrame(usuarioService);
+            registerFrame.setVisible(true);
+        });
         buttonPanel.add(registerButton);
 
         panel.add(buttonPanel, gbc);
@@ -116,8 +110,10 @@ public class LoginFrame extends JFrame {
                 System.out.println(token);
                 System.out.println(user.getRol().getNombre());
                 
-                if (user.getRol().getNombre().equals("Admin")  || user.getRol().getNombre().equals("Tecnico")) {
+                if ("Admin".equals(user.getRol().getNombre())) {
                     new DashboardAdminFrame(currentToken).setVisible(true);
+                } else if ("Tecnico".equals(user.getRol().getNombre())) {
+                    new DashboardTecnicoFrame(currentToken).setVisible(true);
                 } else {
                     new DashboardClientFrame(currentToken).setVisible(true);
                 }
@@ -131,48 +127,7 @@ public class LoginFrame extends JFrame {
         }
     }
 
-    private void handleRegister(ActionEvent e) {
-        String email = emailField.getText();
-        String password = new String(passwordField.getPassword());
-
-        if (email.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill all fields", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        try {
-            String selectedRoleName = (String) roleComboBox.getSelectedItem();
-            Rol role = RolService.getInstance().getRolByName(selectedRoleName);
-            // If role does not exist in DB, create it (RolService will insert into Mongo)
-            if (role == null) {
-                RolService.getInstance().createRol(selectedRoleName);
-                role = RolService.getInstance().getRolByName(selectedRoleName);
-            }
-
-            if (role == null) {
-                JOptionPane.showMessageDialog(this, "Role '" + selectedRoleName + "' could not be created. Contact administrator.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            Usuario newUser = new Usuario("New User", email, password, role);
-            newUser.setNombre("New User");
-            newUser.setMail(email);
-            newUser.setContrasena(password);
-
-            usuarioService.create(newUser);
-            JOptionPane.showMessageDialog(this, "Registration successful! Please login.", "Success", JOptionPane.INFORMATION_MESSAGE);
-        } catch (ErrorConectionMongoException ex) {
-            // Mostrar mensaje más detallado para facilitar debugging: mensaje custom y causa SQL (si existe)
-            String detail = ex.getMessage();
-            if (ex.getCause() != null) {
-                detail += " - " + ex.getCause().getMessage();
-            }
-            JOptionPane.showMessageDialog(this, "Registration error: " + detail, "Error", JOptionPane.ERROR_MESSAGE);
-            // También imprimir stacktrace en consola para diagnóstico local
-            ex.printStackTrace();
-
-        }
-    }
+    // Removed handleRegister as it's now in RegisterFrame
     /*
     private void openDashboard() {
         DashboardFrame dashboard = new DashboardFrame(currentToken);

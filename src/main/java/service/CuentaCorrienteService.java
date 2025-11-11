@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import exceptions.InsufficientFundsException;
 
 @Service
 public class CuentaCorrienteService {
@@ -45,7 +46,18 @@ public class CuentaCorrienteService {
         }
     }
 
-    public double consultarSaldo(int usuarioId) {
+
+
+    private static CuentaCorrienteService instance;
+
+    public static CuentaCorrienteService getInstance() {
+        if (instance == null) {
+            instance = new CuentaCorrienteService();
+        }
+        return instance;
+    }
+
+    public double obtenerSaldo(int usuarioId) {
         CuentaCorriente cuenta = getCuentaByUsuarioId(usuarioId);
         if (cuenta != null && cuenta.getSaldo() != null) {
             return cuenta.getSaldo();
@@ -70,16 +82,17 @@ public class CuentaCorrienteService {
         }
     }
 
-    public void retirarFondos(int usuarioId, Double monto) {
+    public void debitarFondos(int usuarioId, double monto) throws InsufficientFundsException {
+        if (monto <= 0) {
+            throw new IllegalArgumentException("El monto debe ser positivo");
+        }
         CuentaCorriente cuenta = getCuentaByUsuarioId(usuarioId);
         if (cuenta != null) {
             double saldoActual = cuenta.getSaldo() == null ? 0.0 : cuenta.getSaldo();
-            if (saldoActual >= monto) {
-                double nuevoSaldo = saldoActual - monto;
-                actualizarSaldo(usuarioId, nuevoSaldo);
-            } else {
-                throw new IllegalStateException("Saldo insuficiente");
+            if (saldoActual < monto) {
+                throw new InsufficientFundsException("Saldo insuficiente");
             }
+            actualizarSaldo(usuarioId, saldoActual - monto);
         } else {
             throw new IllegalStateException("El usuario no tiene cuenta corriente");
         }

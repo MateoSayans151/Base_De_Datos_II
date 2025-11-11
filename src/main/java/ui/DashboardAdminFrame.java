@@ -3,23 +3,11 @@ package ui;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
 
 import org.json.JSONObject;
 import service.*;
 import entity.*;
-import repository.redis.InicioSesionRepository;
-import repository.mongo.*;
-import repository.cassandra.*;
 import java.util.List;
-import java.util.Optional;
-import java.time.LocalDate;
-
-import entity.ControlFuncionamiento;
-import entity.Sensor;
-import exceptions.ErrorConectionMongoException;
-import service.ControlFuncionamientoService;
-import service.SensorService;
 
 public class DashboardAdminFrame extends JFrame {
     private String userToken;
@@ -28,34 +16,33 @@ public class DashboardAdminFrame extends JFrame {
     private CardLayout cardLayout;
     
     private final UsuarioService usuarioService;
-    private final SensorService sensorService;
-    private final MedicionService medicionService;
-    private final SolicitudProcesoService solicitudProcesoService;
-    private final SolicitudProcesoRepository solicitudProcesoRepository;
-    private final HistorialEjecucionRepository historialRepo;
 
     public DashboardAdminFrame(String token) {
         this.userToken = token;
         
         // Initialize services
-        this.historialRepo = HistorialEjecucionRepository.getInstance();
         this.usuarioService = new UsuarioService();
-        this.sensorService = new SensorService();
-        this.medicionService = new MedicionService();
-        this.solicitudProcesoRepository = SolicitudProcesoRepository.getInstance();
-        this.solicitudProcesoService = new SolicitudProcesoService(solicitudProcesoRepository,historialRepo);
         
         try {
             JSONObject session = usuarioService.getSession(userToken);
             if (session != null) {
                 int userId = session.getInt("id");
                 Usuario usuario = usuarioService.getById(userId);
-                if (usuario != null &&
-                    (usuario.getRol().getNombre().equals("Admin") ||
-                     usuario.getRol().getNombre().equals("Tecnico"))) {
-                    this.currentUser = usuario;
+                if (usuario != null) {
+                    System.out.println("Usuario encontrado: " + usuario.getNombre());
+                    if (usuario.getRol() != null) {
+                        System.out.println("Rol: " + usuario.getRol().getNombre());
+                        if ("Admin".equalsIgnoreCase(usuario.getRol().getNombre()) ||
+                            "Tecnico".equalsIgnoreCase(usuario.getRol().getNombre())) {
+                            this.currentUser = usuario;
+                        } else {
+                            throw new SecurityException("Acceso denegado. Rol requerido: Admin o Técnico. Rol actual: " + usuario.getRol().getNombre());
+                        }
+                    } else {
+                        throw new SecurityException("El usuario no tiene rol asignado");
+                    }
                 } else {
-                    throw new SecurityException("Acceso no autorizado");
+                    throw new SecurityException("Usuario no encontrado con ID: " + userId);
                 }
             } else {
                 throw new SecurityException("Sesión inválida");
@@ -77,27 +64,22 @@ public class DashboardAdminFrame extends JFrame {
         // Panel principal con CardLayout para cambiar entre vistas
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
-
+        
+        // Configurar el layout principal
+        setLayout(new BorderLayout());
+        add(mainPanel, BorderLayout.CENTER);
+        
         // Panel del menú lateral
         JPanel menuPanel = createMenuPanel();
+        add(menuPanel, BorderLayout.WEST);
         
-        // Crear todos los paneles de funcionalidades
-        mainPanel.add(createWelcomePanel(), "WELCOME");
-        mainPanel.add(createRequestsPanel(), "REQUESTS");
-        mainPanel.add(createSensorsPanel(), "SENSORS");
-        mainPanel.add(createInvoicesPanel(), "INVOICES");
+        // Agregar SOLO los tres paneles requeridos para Admin
         mainPanel.add(createUsersPanel(), "USERS");
+        mainPanel.add(createSensorsPanel(), "SENSORS");
         mainPanel.add(createMessagesPanel(), "MESSAGES");
         
-        // Para técnicos: Panel de aprobación de procesos
-        if ("Tecnico".equals(currentUser.getRol().getNombre())) {
-            mainPanel.add(createProcessApprovalPanel(), "PROCESS_APPROVAL");
-        }
-
-        // Layout principal
-        setLayout(new BorderLayout());
-        add(menuPanel, BorderLayout.WEST);
-        add(mainPanel, BorderLayout.CENTER);
+        // Mostrar panel de usuarios por defecto
+        cardLayout.show(mainPanel, "USERS");
     }
 
     private JPanel createMenuPanel() {
@@ -117,13 +99,6 @@ public class DashboardAdminFrame extends JFrame {
         JLabel roleLabel = new JLabel(currentUser.getRol().getNombre());
         roleLabel.setForeground(new Color(46, 204, 113));
         roleLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        
-        // Si es técnico, agregar botón de aprobación de procesos
-        if ("Tecnico".equals(currentUser.getRol().getNombre())) {
-            JButton procesosBtn = createMenuButton("Aprobación de Procesos", "PROCESS_APPROVAL");
-            menuPanel.add(procesosBtn);
-            menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        }
         roleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel nameLabel = new JLabel(currentUser.getNombre());
@@ -138,11 +113,9 @@ public class DashboardAdminFrame extends JFrame {
         menuPanel.add(userInfoPanel);
         menuPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Botones del menú
-        addMenuButton(menuPanel, "Solicitudes Pendientes", "REQUESTS");
-        addMenuButton(menuPanel, "Gestionar Sensores", "SENSORS");
-        addMenuButton(menuPanel, "Gestionar Facturas", "INVOICES");
+        // Botones del menú - Solo para Admin: Gestionar Usuarios, Gestionar Sensores, Mensajería
         addMenuButton(menuPanel, "Gestionar Usuarios", "USERS");
+        addMenuButton(menuPanel, "Gestionar Sensores", "SENSORS");
         addMenuButton(menuPanel, "Mensajería", "MESSAGES");
         
         // Botón de cerrar sesión
@@ -165,40 +138,6 @@ public class DashboardAdminFrame extends JFrame {
         
         panel.add(button);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
-    }
-
-    // Helper that returns a styled menu button (used for conditional additions)
-    private JButton createMenuButton(String text, String cardName) {
-        JButton button = new JButton(text);
-        button.setAlignmentX(Component.CENTER_ALIGNMENT);
-        button.setMaximumSize(new Dimension(200, 40));
-        button.setFont(new Font("Arial", Font.PLAIN, 14));
-        button.addActionListener(e -> cardLayout.show(mainPanel, cardName));
-        return button;
-    }
-
-    private JPanel createWelcomePanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(new Color(236, 240, 241));
-
-        JLabel welcomeLabel = new JLabel("Bienvenido al Panel de Administración");
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        panel.add(welcomeLabel);
-
-        return panel;
-    }
-
-    private JPanel createRequestsPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        panel.setBackground(new Color(236, 240, 241));
-
-        // Por ahora solo mostraremos un mensaje
-        JLabel label = new JLabel("Implementando panel de solicitudes...");
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        panel.add(label, BorderLayout.CENTER);
-
-        return panel;
     }
 
     private JPanel createSensorsPanel() {
@@ -441,344 +380,201 @@ public class DashboardAdminFrame extends JFrame {
         }).start();
     }
 
-    private JPanel createInvoicesPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        panel.setBackground(new Color(236, 240, 241));
-
-        // Por ahora solo mostraremos un mensaje
-        JLabel label = new JLabel("Implementando panel de facturas...");
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        panel.add(label, BorderLayout.CENTER);
-
-        return panel;
-    }
-
     private JPanel createUsersPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         panel.setBackground(new Color(236, 240, 241));
 
-        // Por ahora solo mostraremos un mensaje
-        JLabel label = new JLabel("Implementando panel de usuarios...");
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        panel.add(label, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    private JPanel createProcessApprovalPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        panel.setBackground(new Color(236, 240, 241));
-
         // Título
-        JLabel titleLabel = new JLabel("Aprobación de Procesos");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        JLabel titleLabel = new JLabel("Gestionar Usuarios");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         panel.add(titleLabel, BorderLayout.NORTH);
 
-        // Panel central con la lista de solicitudes
-        JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBackground(new Color(236, 240, 241));
+        // Panel superior con botones
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setBackground(new Color(236, 240, 241));
 
-        // Tabla de solicitudes
-        String[] columnNames = {"ID", "Cliente", "Proceso", "Fecha", "Estado", "Costo"};
+        JButton refreshButton = new JButton("Actualizar");
+        JButton deleteButton = new JButton("Eliminar Seleccionado");
+        JButton changeRoleButton = new JButton("Cambiar Rol");
+        deleteButton.setForeground(Color.RED);
+
+        topPanel.add(refreshButton);
+        topPanel.add(deleteButton);
+        topPanel.add(changeRoleButton);
+
+        // Tabla de usuarios
+        String[] columnNames = {"ID", "Nombre", "Email", "Rol", "Fecha Creación"};
         DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
-        JTable solicitudesTable = new JTable(tableModel);
-        JScrollPane scrollPane = new JScrollPane(solicitudesTable);
-
-        centerPanel.add(scrollPane, BorderLayout.CENTER);
-
-        // Panel de botones
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.setBackground(new Color(236, 240, 241));
-
-        JButton aprobarBtn = new JButton("Aprobar");
-        JButton rechazarBtn = new JButton("Rechazar");
-        JButton refreshBtn = new JButton("Actualizar");
-
-        aprobarBtn.setEnabled(false);
-        rechazarBtn.setEnabled(false);
+        JTable usersTable = new JTable(tableModel);
+        usersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane scrollPane = new JScrollPane(usersTable);
 
         // Habilitar/deshabilitar botones según selección
-        solicitudesTable.getSelectionModel().addListSelectionListener(e -> {
-            boolean rowSelected = solicitudesTable.getSelectedRow() != -1;
-            aprobarBtn.setEnabled(rowSelected);
-            rechazarBtn.setEnabled(rowSelected);
+        usersTable.getSelectionModel().addListSelectionListener(e -> {
+            boolean rowSelected = usersTable.getSelectedRow() != -1;
+            deleteButton.setEnabled(rowSelected);
+            changeRoleButton.setEnabled(rowSelected);
+        });
+        deleteButton.setEnabled(false);
+        changeRoleButton.setEnabled(false);
+
+        // Acción del botón Actualizar
+        refreshButton.addActionListener(e -> loadUsersAsync(tableModel, panel));
+
+        // Acción del botón Eliminar
+        deleteButton.addActionListener(e -> {
+            int selectedRow = usersTable.getSelectedRow();
+            if (selectedRow != -1) {
+                int userId = (int) tableModel.getValueAt(selectedRow, 0);
+                String userName = (String) tableModel.getValueAt(selectedRow, 1);
+                
+                int confirm = JOptionPane.showConfirmDialog(panel,
+                    "¿Está seguro de eliminar al usuario " + userName + "?",
+                    "Confirmar Eliminación",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+                
+                if (confirm == JOptionPane.OK_OPTION) {
+                    try {
+                        usuarioService.deleteUser(userId);
+                        JOptionPane.showMessageDialog(panel,
+                            "Usuario eliminado correctamente",
+                            "Éxito",
+                            JOptionPane.INFORMATION_MESSAGE);
+                        loadUsersAsync(tableModel, panel);
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(panel,
+                            "Error al eliminar usuario: " + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
         });
 
-        // Actualizar lista de solicitudes (fetch in background to avoid blocking the EDT)
-        refreshBtn.addActionListener(e -> {
-            new Thread(() -> {
-                try {
-                    List<SolicitudProceso> solicitudes = solicitudProcesoService.listarPorEstado("PENDIENTE");
-                    javax.swing.SwingUtilities.invokeLater(() -> {
-                        tableModel.setRowCount(0);
-                        for (SolicitudProceso sol : solicitudes) {
+        // Acción del botón Cambiar Rol
+        changeRoleButton.addActionListener(e -> {
+            int selectedRow = usersTable.getSelectedRow();
+            if (selectedRow != -1) {
+                int userId = (int) tableModel.getValueAt(selectedRow, 0);
+                String userName = (String) tableModel.getValueAt(selectedRow, 1);
+                String currentRole = (String) tableModel.getValueAt(selectedRow, 3);
+
+                // Diálogo para seleccionar el nuevo rol
+                String[] roles = {"Admin", "Tecnico", "Cliente"};
+                String selectedRole = (String) JOptionPane.showInputDialog(
+                    panel,
+                    "Seleccione el nuevo rol para " + userName + ":",
+                    "Cambiar Rol",
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    roles,
+                    currentRole);
+
+                if (selectedRole != null) {
+                    try {
+                        // Crear objeto Rol con los datos necesarios
+                        Rol newRol = new Rol(selectedRole);
+                        // Buscar el ID del rol (esto es una simplificación, idealmente consultarías la BD)
+                        if ("Admin".equals(selectedRole)) {
+                            newRol.setId(1);
+                        } else if ("Tecnico".equals(selectedRole)) {
+                            newRol.setId(2);
+                        } else if ("Cliente".equals(selectedRole)) {
+                            newRol.setId(3);
+                        }
+
+                        usuarioService.updateUserRole(userId, newRol);
+                        JOptionPane.showMessageDialog(panel,
+                            "Rol actualizado correctamente a: " + selectedRole,
+                            "Éxito",
+                            JOptionPane.INFORMATION_MESSAGE);
+                        loadUsersAsync(tableModel, panel);
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(panel,
+                            "Error al actualizar rol: " + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        });
+
+        panel.add(topPanel, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        // Cargar datos iniciales EN UN HILO SEPARADO para no bloquear la UI
+        new Thread(() -> {
+            loadUsersSynchronous(tableModel, panel);
+        }).start();
+
+        return panel;
+    }
+
+    private void loadUsersSynchronous(DefaultTableModel tableModel, JPanel parentPanel) {
+        try {
+            System.out.println("[DEBUG] Iniciando carga de usuarios desde MongoDB...");
+            List<Usuario> usuarios = usuarioService.getAllUsuarios();
+            System.out.println("[DEBUG] Usuarios obtenidos: " + (usuarios != null ? usuarios.size() : "null"));
+            
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                tableModel.setRowCount(0);
+                if (usuarios != null && !usuarios.isEmpty()) {
+                    System.out.println("[DEBUG] Llenando tabla con " + usuarios.size() + " usuarios");
+                    for (Usuario user : usuarios) {
+                        System.out.println("[DEBUG] Agregando usuario: " + user.getNombre() + " (" + user.getId() + ")");
+                        tableModel.addRow(new Object[]{
+                            user.getId(),
+                            user.getNombre(),
+                            user.getMail(),
+                            user.getRol() != null ? user.getRol().getNombre() : "N/A",
+                            user.getFechaRegistro() != null ? user.getFechaRegistro().toString() : "N/A"
+                        });
+                    }
+                } else {
+                    System.out.println("[DEBUG] Lista de usuarios vacía o nula");
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("[ERROR] Error al cargar usuarios: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void loadUsersAsync(DefaultTableModel tableModel, JPanel parentPanel) {
+        // Ejecutar en un hilo para no bloquear la UI al actualizar
+        new Thread(() -> {
+            try {
+                List<Usuario> usuarios = usuarioService.getAllUsuarios();
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    tableModel.setRowCount(0);
+                    if (usuarios != null && !usuarios.isEmpty()) {
+                        for (Usuario user : usuarios) {
                             tableModel.addRow(new Object[]{
-                                sol.getId(),
-                                sol.getUsuario().getNombre(),
-                                sol.getProceso().getNombre(),
-                                sol.getFechaSolicitud(),
-                                sol.getEstado(),
-                                sol.getProceso().getCosto()
+                                user.getId(),
+                                user.getNombre(),
+                                user.getMail(),
+                                user.getRol() != null ? user.getRol().getNombre() : "N/A",
+                                user.getFechaRegistro() != null ? user.getFechaRegistro().toString() : "N/A"
                             });
                         }
-                    });
-                } catch (Exception ex) {
-                    javax.swing.SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(panel,
-                        "Error al cargar solicitudes: " + ex.getMessage(),
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE));
-                }
-            }).start();
-        });
-
-        // Acción de aprobar
-        aprobarBtn.addActionListener(e -> {
-            int selectedRow = solicitudesTable.getSelectedRow();
-            if (selectedRow != -1) {
-                int solicitudId = (int) tableModel.getValueAt(selectedRow, 0);
-                try {
-                    Optional<SolicitudProceso> optSolicitud = solicitudProcesoService.obtenerPorId(solicitudId);
-                    
-                    if (optSolicitud.isPresent()) {
-                        SolicitudProceso solicitud = optSolicitud.get();
-                        solicitudProcesoService.actualizarEstado(solicitud.getId(), "APROBADO");
-                        
-                        // Crear factura
-                        Factura factura = new Factura();
-                        factura.setUsuario(solicitud.getUsuario());
-                        factura.setFechaEmision(LocalDate.now());
-                        factura.setProcesosFacturados(List.of(solicitud.getProceso()));
-                        factura.setTotal(solicitud.getProceso().getCosto());
-                        factura.setEstado("PENDIENTE");
-                        
-                        FacturaService facturaService = new FacturaService();
-                        facturaService.createFactura(factura);
-                        
-                        JOptionPane.showMessageDialog(panel,
-                            "Solicitud aprobada y factura generada",
-                            "Éxito",
-                            JOptionPane.INFORMATION_MESSAGE);
-                            
-                        refreshBtn.doClick();
-                    }
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(panel,
-                        "Error al aprobar solicitud: " + ex.getMessage(),
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        });
-
-        // Acción de rechazar
-        rechazarBtn.addActionListener(e -> {
-            int selectedRow = solicitudesTable.getSelectedRow();
-            if (selectedRow != -1) {
-                int solicitudId = (int) tableModel.getValueAt(selectedRow, 0);
-                try {
-                    Optional<SolicitudProceso> optSolicitud = solicitudProcesoService.obtenerPorId(solicitudId);
-                    
-                    if (optSolicitud.isPresent()) {
-                        SolicitudProceso solicitud = optSolicitud.get();
-                        solicitudProcesoService.actualizarEstado(solicitud.getId(), "RECHAZADO");
-                        
-                        JOptionPane.showMessageDialog(panel,
-                            "Solicitud rechazada",
-                            "Éxito",
-                            JOptionPane.INFORMATION_MESSAGE);
-                            
-                        refreshBtn.doClick();
-                    }
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(panel,
-                        "Error al rechazar solicitud: " + ex.getMessage(),
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        });
-
-        buttonPanel.add(refreshBtn);
-        buttonPanel.add(aprobarBtn);
-        buttonPanel.add(rechazarBtn);
-
-        centerPanel.add(buttonPanel, BorderLayout.SOUTH);
-        panel.add(centerPanel, BorderLayout.CENTER);
-
-    // Cargar datos iniciales (run the refresh action which itself fetches in background)
-    refreshBtn.doClick();
-
-        return panel;
-    }
-
-    private JPanel createVerControlesPanel() {
-        JPanel panel = new JPanel(new BorderLayout(8, 8));
-
-        // Table
-        DefaultTableModel tableModel = new DefaultTableModel(
-                new String[]{"ID", "SensorId", "Cod", "Fecha", "Estado", "Observaciones"}, 0) {
-            @Override
-            public boolean isCellEditable(int row, int col) { return false; }
-        };
-        JTable table = new JTable(tableModel);
-        panel.add(new JScrollPane(table), BorderLayout.CENTER);
-
-        // Controls
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton generateBtn = new JButton("Generar Controles");
-        JButton refreshBtn = new JButton("Refrescar");
-        top.add(generateBtn);
-        top.add(refreshBtn);
-        panel.add(top, BorderLayout.NORTH);
-
-        // Services
-        final ControlFuncionamientoService controlService = ControlFuncionamientoService.getInstance();
-        final SensorService sensorService = SensorService.getInstance();
-
-        // Helper to load and show controls
-        Runnable loadControls = () -> {
-            try {
-                List<ControlFuncionamiento> controls = controlService.getAll();
-                SwingUtilities.invokeLater(() -> {
-                    tableModel.setRowCount(0);
-                    if (controls == null) return;
-                    for (ControlFuncionamiento c : controls) {
-                        if (c == null) continue;
-                        Object[] row = new Object[]{
-                                c.getId(),
-                                c.getSensor() != null ? c.getSensor().getId() : null,
-                                c.getSensor() != null ? c.getSensor().getCod() : null,
-                                c.getFechaControl() != null ? c.getFechaControl().toString() : null,
-                                c.getEstado(),
-                                c.getObservaciones()
-                        };
-                        tableModel.addRow(row);
+                        JOptionPane.showMessageDialog(parentPanel, "Lista actualizada correctamente");
+                    } else {
+                        JOptionPane.showMessageDialog(parentPanel, "No hay usuarios disponibles");
                     }
                 });
-            } catch (Exception ex) {
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                        "Error loading controls: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE));
+            } catch (Exception e) {
+                javax.swing.SwingUtilities.invokeLater(() ->
+                    JOptionPane.showMessageDialog(parentPanel, "Error al cargar usuarios: " + e.getMessage())
+                );
             }
-        };
-
-        // Generate button action: create one control per sensor and then refresh
-        generateBtn.addActionListener(e -> {
-            generateBtn.setEnabled(false);
-            new Thread(() -> {
-                try {
-                    List<Sensor> sensors = sensorService.getAllSensors();
-                    if (sensors != null) {
-                        for (Sensor s : sensors) {
-                            if (s == null) continue;
-                            // create a control for each sensor (no null fields)
-                            ControlFuncionamiento c = new ControlFuncionamiento(
-                                    s,
-                                    LocalDate.now(),
-                                    "funcionando",
-                                    "Generado desde UI"
-                            );
-                            controlService.create(c);
-                        }
-                    }
-                    loadControls.run();
-                } catch (Exception ex) {
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                            "Error generating controls: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE));
-                } finally {
-                    SwingUtilities.invokeLater(() -> generateBtn.setEnabled(true));
-                }
-            }).start();
-        });
-
-        // Refresh button
-        refreshBtn.addActionListener(e -> new Thread(loadControls).start());
-
-        // initial load
-        new Thread(loadControls).start();
-
-        return panel;
-    }
-
-    private JPanel createVerAlertasPanel() {
-        JPanel panel = new JPanel(new BorderLayout(8, 8));
-
-        // Table
-        DefaultTableModel tableModel = new DefaultTableModel(
-                new String[]{"ID", "SensorId", "Cod", "Fecha", "Descripcion", "Estado"}, 0) {
-            @Override
-            public boolean isCellEditable(int row, int col) { return false; }
-        };
-        JTable table = new JTable(tableModel);
-        panel.add(new JScrollPane(table), BorderLayout.CENTER);
-
-        // Controls
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton generateBtn = new JButton("Generar Alertas");
-        JButton refreshBtn = new JButton("Refrescar");
-        top.add(generateBtn);
-        top.add(refreshBtn);
-        panel.add(top, BorderLayout.NORTH);
-
-        // Service
-        final AlertaService alertaService = AlertaService.getInstance();
-
-        // Helper to load and show alerts
-        Runnable loadAlerts = () -> {
-            try {
-                List<Alerta> alerts = alertaService.checkAlerts();
-                SwingUtilities.invokeLater(() -> {
-                    tableModel.setRowCount(0);
-                    if (alerts == null) return;
-                    for (Alerta a : alerts) {
-                        if (a == null) continue;
-                        Object[] row = new Object[]{
-                                a.getId() != null ? a.getId().toString() : null,
-                                a.getSensor() != null ? a.getSensor().getId() : null,
-                                a.getSensor() != null ? a.getSensor().getCod() : null,
-                                a.getFecha() != null ? a.getFecha().toString() : null,
-                                a.getDescripcion(),
-                                a.getEstado()
-                        };
-                        tableModel.addRow(row);
-                    }
-                });
-            } catch (Exception ex) {
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                        "Error loading alerts: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE));
-            }
-        };
-
-        // Generate button action: create alerts (uses service.createAllAlerts()) then refresh
-        generateBtn.addActionListener(e -> {
-            generateBtn.setEnabled(false);
-            new Thread(() -> {
-                try {
-                    alertaService.createAllAlerts();
-                    loadAlerts.run();
-                } catch (Exception ex) {
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                            "Error generating alerts: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE));
-                } finally {
-                    SwingUtilities.invokeLater(() -> generateBtn.setEnabled(true));
-                }
-            }).start();
-        });
-
-        // Refresh button
-        refreshBtn.addActionListener(e -> new Thread(loadAlerts).start());
-
-        // initial load
-        new Thread(loadAlerts).start();
-
-        return panel;
+        }).start();
     }
 
     private void logout() {
@@ -797,13 +593,8 @@ public class DashboardAdminFrame extends JFrame {
         panel.setBackground(new Color(236, 240, 241));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Open VerMensajesFrame directly for the current user
-        VerMensajesFrame mensajesFrame = new VerMensajesFrame(currentUser);
-        mensajesFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Allow closing messages without closing dashboard
-        mensajesFrame.setVisible(true);
-
-        // Show a message in the dashboard panel
-        JLabel label = new JLabel("Ventana de mensajes abierta en una ventana separada");
+        // Show instructions instead of opening window automatically
+        JLabel label = new JLabel("Haga clic en el botón para abrir la ventana de mensajes");
         label.setHorizontalAlignment(SwingConstants.CENTER);
         panel.add(label, BorderLayout.CENTER);
 

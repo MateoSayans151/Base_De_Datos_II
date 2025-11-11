@@ -48,62 +48,7 @@ public class ProcesoService {
         repo.crearProceso(proceso);
         return proceso;
     }
-    @Transactional
-    public Factura asignarUltimaSolicitudYEmitirFactura(Usuario tecnico, Medicion medicion) {
-        if (tecnico == null) throw new IllegalArgumentException("Usuario tecnico no puede ser nulo");
-        // validar rol 'tecnico' usando getRol() (admite entity.Rol o String)
-        /* Esto lo podés sacar si querés porque solo el técnico va a poder llamar a esta funcion. Encima el rol en la base es Tecnico,Admin y Cliente. Con la primera letra mayúscula
-        boolean esTecnico = false;
-        try {
-            Object rolObj = tecnico.getRol();
-            if (rolObj != null) {
-                if (rolObj instanceof String) {
-                    esTecnico = "tecnico".equalsIgnoreCase((String) rolObj);
-                } else if (rolObj instanceof entity.Rol) {
-                    entity.Rol r = (entity.Rol) rolObj;
-                    esTecnico = r.getNombre() != null && r.getNombre().equalsIgnoreCase("tecnico");
-                }
-            }
-        } catch (Throwable t) { /* ignorar errores de reflexión  }
-    */
 
-        if (!tecnico.getRol().getNombre().equals("Tecnico")) throw new SecurityException("Solo usuarios con rol 'tecnico' pueden asignar mediciones"); // Encima acá ya estás validando que sea tecnico u algo distinto
-
-        try {
-            // obtener la última solicitud pendiente
-            List<SolicitudProceso> pendientes = solicitudRepo.findByEstadoIgnoreCase("pendiente");
-            if (pendientes == null || pendientes.isEmpty())
-                throw new RuntimeException("No hay solicitudes pendientes");
-
-            SolicitudProceso solicitud = pendientes.get(pendientes.size() - 1);
-
-            // insertar la medición en Cassandra (se asume que 'medicion' ya viene con sensor/fecha adecuados)
-            MedicionRepository medRepo = MedicionRepository.getInstance();
-            medRepo.insertMeasurement(medicion);
-
-            // actualizar la solicitud a completado y guardarla
-            solicitud.setEstado("completado");
-            SolicitudProceso saved = solicitudRepo.save(solicitud);
-
-            // crear la factura para el usuario que hizo la solicitud
-            Proceso proceso = saved.getProceso();
-            Double total = (proceso != null) ? proceso.getCosto() : 0.0;
-            Factura factura = new Factura(
-                    saved.getUsuario(),
-                    LocalDate.now(),
-                    "pendiente", // estado inicial de la factura
-                    (proceso != null) ? Collections.singletonList(proceso) : Collections.emptyList(),
-                    total
-            );
-
-            // TODO: persistir factura si tenés un repositorio/DAO de Factura (p. ej. facturaRepo.save(factura))
-            return factura;
-        } catch (ErrorConectionMongoException e) {
-            throw new RuntimeException("Mongo: error al procesar solicitud/factura", e);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al asignar medición y emitir factura: " + e.getMessage(), e);
-        }
-    }
     /*
     * Podremos suponer que marcos en la ventana de solicitudes marcos va a mostrar las solicitudes pendientes y el técnico va a seleccionar una para cambiarle el estado a rechazada o completada.
     * Entonces lo que podríamos hacer es que una vez que el tecnico sellecione la solicitud y le de a un boton de "completar solicitud" se llame a este método pasandole la solicitud seleccionada y el rol del tecnico.
@@ -160,10 +105,11 @@ public class ProcesoService {
             Factura factura = new Factura(
                     saved.getUsuario(),
                     LocalDate.now(),
-                    "pendiente", // estado inicial de la factura
-                    (proceso != null) ? Collections.singletonList(proceso) : Collections.emptyList(),
-                    total
+                    "pendiente",
+                    proceso,
+                    total, ubicacion
             );
+
 
             // TODO: persistir factura si tenés un repositorio/DAO de Factura (p. ej. facturaRepo.save(factura))
             return factura;
@@ -196,6 +142,13 @@ public class ProcesoService {
         if (tipo == null || tipo.isBlank())
             throw new IllegalArgumentException("El tipo no puede ser vacío");
         return repo.obtenerProcesosPorTipo(tipo);
+    }
+
+    /* ===========================
+       OBTENER TODOS LOS PROCESOS
+       =========================== */
+    public List<Proceso> obtenerTodosLosProcesos() throws ErrorConectionMongoException {
+        return repo.obtenerTodosLosProcesos();
     }
 
     /* ===========================

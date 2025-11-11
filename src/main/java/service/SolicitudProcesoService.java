@@ -18,6 +18,7 @@ import repository.mongo.SolicitudProcesoRepository;
 @Service
 public class SolicitudProcesoService {
 
+    private static SolicitudProcesoService instance;
     private final SolicitudProcesoRepository repo;
     private final HistorialEjecucionRepository historialRepo;
 
@@ -26,9 +27,45 @@ public class SolicitudProcesoService {
         this.historialRepo = historialRepo;
     }
 
+    public static SolicitudProcesoService getInstance() {
+        if (instance == null) {
+            instance = new SolicitudProcesoService(SolicitudProcesoRepository.getInstance(), HistorialEjecucionRepository.getInstance());
+        }
+        return instance;
+    }
+
+    public void crearSolicitudProceso(Usuario usuario, Proceso proceso) throws ErrorConectionMongoException {
+        crearSolicitudProceso(usuario, proceso, null, null);
+    }
+
+    /**
+     * Crear solicitud indicando opcionalmente ciudad y/o país.
+     * Al menos uno puede ser null/empty; validación de UI se debe hacer en la capa de presentación.
+     */
+    public void crearSolicitudProceso(Usuario usuario, Proceso proceso, String ciudad, String pais) throws ErrorConectionMongoException {
+        if (usuario == null || proceso == null) {
+            throw new IllegalArgumentException("Usuario y Proceso son requeridos");
+        }
+
+        SolicitudProceso solicitud = new SolicitudProceso(
+            usuario,
+            proceso,
+            LocalDateTime.now(),
+            "Pendiente",  // Estado inicial, con P mayúscula según el schema
+            ciudad,
+            pais
+        );
+        repo.save(solicitud);
+    }
+
     /* ===========================
-       CRUD BÁSICO
+       GESTIÓN DE SOLICITUDES
        =========================== */
+
+    @Transactional
+    public List<SolicitudProceso> obtenerSolicitudesPendientes() throws ErrorConectionMongoException {
+        return repo.findByEstadoIgnoreCase("Pendiente");
+    }
 
     @Transactional
     public SolicitudProceso crearSolicitud(Usuario usuario, Proceso proceso, String estado) {
@@ -40,21 +77,54 @@ public class SolicitudProcesoService {
             solicitud.setUsuario(usuario);
             solicitud.setProceso(proceso);
             solicitud.setFechaSolicitud(LocalDateTime.now());
-            solicitud.setEstado(estado != null ? estado : "pendiente");
+            solicitud.setEstado(estado != null ? estado : "Pendiente"); // Estado inicial con P mayúscula
             return repo.save(solicitud);
         } catch (ErrorConectionMongoException e) {
             throw new RuntimeException("Mongo: error al crear SolicitudProceso", e);
         }
     }
 
-    public List<SolicitudProceso> listarTodas() {
-        try {
-            return repo.findAll();
-        } catch (ErrorConectionMongoException e) {
-            throw new RuntimeException("Mongo: error al listar SolicitudProceso", e);
-        }
+    public List<SolicitudProceso> obtenerSolicitudesUsuario(int usuarioId) throws ErrorConectionMongoException {
+        return repo.findByUsuario_Id(usuarioId);
     }
 
+    public void aprobarSolicitud(int solicitudId, Usuario tecnico) throws ErrorConectionMongoException {
+        Optional<SolicitudProceso> solicitudOpt = repo.findById(solicitudId);
+        if (!solicitudOpt.isPresent()) {
+            throw new IllegalArgumentException("Solicitud no encontrada: " + solicitudId);
+        }
+
+        if (!tecnico.getRol().getNombre().equalsIgnoreCase("TECNICO")) {
+            throw new IllegalArgumentException("Solo los técnicos pueden aprobar solicitudes");
+        }
+
+        SolicitudProceso solicitud = solicitudOpt.get();
+        if (!"Pendiente".equals(solicitud.getEstado())) {
+            throw new IllegalStateException("Solo se pueden aprobar solicitudes pendientes");
+        }
+
+        solicitud.setEstado("Aprobado");
+        repo.save(solicitud);
+    }
+
+    public void rechazarSolicitud(int solicitudId, Usuario tecnico) throws ErrorConectionMongoException {
+        Optional<SolicitudProceso> solicitudOpt = repo.findById(solicitudId);
+        if (!solicitudOpt.isPresent()) {
+            throw new IllegalArgumentException("Solicitud no encontrada: " + solicitudId);
+        }
+
+        if (!tecnico.getRol().getNombre().equalsIgnoreCase("TECNICO")) {
+            throw new IllegalArgumentException("Solo los técnicos pueden rechazar solicitudes");
+        }
+
+        SolicitudProceso solicitud = solicitudOpt.get();
+        if (!"Pendiente".equals(solicitud.getEstado())) {
+            throw new IllegalStateException("Solo se pueden rechazar solicitudes pendientes");
+        }
+
+        solicitud.setEstado("Rechazado");
+        repo.save(solicitud);
+    }
     public Optional<SolicitudProceso> obtenerPorId(int id) {
         try {
             return repo.findById(id);
