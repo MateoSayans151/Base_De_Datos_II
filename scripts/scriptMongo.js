@@ -76,18 +76,27 @@ db.createCollection('factura', {
       bsonType: 'object',
       required: ['id', 'usuario', 'fechaEmision', 'procesosFacturados', 'total', 'estado'],
       properties: {
-        id: { bsonType: 'int' },
-        usuario: {
+          id: {bsonType: 'int'},
+          usuario: {
+              bsonType: 'object',
+              required: ['idUsuario', 'nombre', 'mail'],
+              properties: {
+                  idUsuario: {bsonType: 'int'},
+                  nombre: {bsonType: 'string'},
+                  mail: {bsonType: 'string', pattern: '^.+@.+\\..+$'}
+              }
+          },
+          fechaEmision: {bsonType: 'date'},
+          procesosFacturados: {
           bsonType: 'object',
-          required: ['idUsuario', 'nombre', 'mail'],
-          properties: {
-            idUsuario: { bsonType: 'int' },
-            nombre: { bsonType: 'string' },
-            mail: { bsonType: 'string', pattern: '^.+@.+\\..+$' }
+          required: ['idProceso', 'nombre', 'costo', 'descripcion'],
+          properties:{
+              idProceso: {bsonType: 'int'},
+              nombre: {bsonType: 'string'},
+              costo: {bsonType: ['double', 'decimal']},
+              descripcion: {bsonType: 'string'}
           }
         },
-        fechaEmision: { bsonType: 'date' },
-        procesosFacturados: { bsonType: 'string' },
         total: { bsonType: ['double', 'decimal'] },
         estado: { enum: ['Pendiente', 'Pagada'] }
       }

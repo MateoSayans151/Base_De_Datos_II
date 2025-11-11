@@ -94,6 +94,7 @@ public class ProcessApprovalFrame extends JFrame {
 
     private void handleApproval(boolean approved) {
         SolicitudProceso selectedSolicitud = solicitudList.getSelectedValue();
+
         if (selectedSolicitud == null) {
             JOptionPane.showMessageDialog(this,
                 "Please select a request to process",
@@ -101,24 +102,24 @@ public class ProcessApprovalFrame extends JFrame {
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
-
+        System.out.println("estamos aca");
         try {
             if (approved) {
                 // Update solicitud status
-                solicitudService.actualizarEstado(selectedSolicitud.getId(), "APROBADO");
-                
+
+                solicitudService.actualizarEstado(selectedSolicitud.getId(), "Pendiente");
                 // Create invoice
-                Factura factura = new Factura(
-                    selectedSolicitud.getUsuario(),
-                    LocalDate.now(),
-                    "Pendiente",
-                    selectedSolicitud.getProceso(),
-                    selectedSolicitud.getProceso().getCosto(),
-                    "Proceso"
-                );
-                factura.setDescripcion("Factura por proceso: " + selectedSolicitud.getProceso().getNombre());
-                
+                ProcesoService procesoService = new ProcesoService();
+                Factura factura = new Factura();
+                if(selectedSolicitud.getCiudad() == null || selectedSolicitud.getCiudad().isEmpty()) {
+                    factura = procesoService.ejectuarSolicitudYEmitirFactura(selectedSolicitud,selectedSolicitud.getPais());
+                }else{
+                     factura = procesoService.ejectuarSolicitudYEmitirFactura(selectedSolicitud ,selectedSolicitud.getCiudad());
+                }
+
+                System.out.println(factura.getProcesoFacturado().getId() + " factura creada en UI" + factura.getProcesoFacturado().getDescripcion());
                 facturaService.crearFactura(factura);
+
 
                 JOptionPane.showMessageDialog(this,
                     "Request approved and invoice created.",

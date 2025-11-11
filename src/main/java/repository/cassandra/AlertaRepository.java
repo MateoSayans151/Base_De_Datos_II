@@ -8,7 +8,6 @@ import entity.Sensor;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -25,28 +24,34 @@ public class AlertaRepository {
     }
 
     public void crearAlerta(Alerta alerta){
+
         String cass = "INSERT INTO Alertas (id,idSensor,cod,tipo,latitud,longitud,ciudad,pais,estado,fechayHora,descripcion,estadoAlerta) " +
                 "VALUES (?,?,?,?,?,?,?,?,?,?,?,?);";
         CassandraPool cassandraPool = CassandraPool.getInstance();
-        Instant dateInstant = alerta.getFecha().atZone(ZoneOffset.UTC).toInstant();
         var session = cassandraPool.getSession();
+        var instant = alerta.getFecha().atZone(ZoneId.systemDefault()).toInstant();
         UUID id = UUID.randomUUID();
         Sensor sensor = alerta.getSensor();
         alerta.setId(id);
-        session.execute(cass,
-                alerta.getId(),
-                sensor.getId(),
-                sensor.getCod(),
-                sensor.getTipo(),
-                sensor.getLatitud(),
-                sensor.getLongitud(),
-                sensor.getCiudad(),
-                sensor.getPais(),
-                sensor.getEstado(),        // sensor state (as stored in table)
-                dateInstant,         // fechayHora
-                alerta.getDescripcion(),   // descripcion (alert text)
-                alerta.getEstado()         // estado (alert state)
-        );
+        try {
+
+            session.execute(cass,
+                    alerta.getId(),
+                    sensor.getId(),
+                    sensor.getCod(),
+                    sensor.getTipo(),
+                    sensor.getLatitud(),
+                    sensor.getLongitud(),
+                    sensor.getCiudad(),
+                    sensor.getPais(),
+                    sensor.getEstado(),
+                    instant,
+                    alerta.getDescripcion(),
+                    alerta.getEstado()
+            );
+        }catch (Exception e){
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     public Alerta obtenerAlerta(String idAlerta){
@@ -77,6 +82,12 @@ public class AlertaRepository {
         }
 
         return alertas;
+    }
+    public void deleteSensorAlerts(){
+        String cass = "TRUNCATE Alertas ;";
+        CassandraPool cassandraPool = CassandraPool.getInstance();
+        var session = cassandraPool.getSession();
+        session.execute(cass);
     }
 
     public Alerta mappearAlerta(Row row){

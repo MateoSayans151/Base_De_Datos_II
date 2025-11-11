@@ -7,6 +7,8 @@ import java.awt.*;
 import org.json.JSONObject;
 import service.*;
 import entity.*;
+
+import java.awt.event.ActionListener;
 import java.util.List;
 
 public class DashboardAdminFrame extends JFrame {
@@ -14,12 +16,12 @@ public class DashboardAdminFrame extends JFrame {
     private Usuario currentUser;
     private JPanel mainPanel;
     private CardLayout cardLayout;
-    
+    private final SensorService sensorService;
     private final UsuarioService usuarioService;
 
     public DashboardAdminFrame(String token) {
         this.userToken = token;
-        
+        this.sensorService = new SensorService();
         // Initialize services
         this.usuarioService = new UsuarioService();
         
@@ -145,22 +147,39 @@ public class DashboardAdminFrame extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         panel.setBackground(new Color(236, 240, 241));
 
-        // Panel superior con botones
+        // Panel superior con botones y búsqueda por ID
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setBackground(new Color(236, 240, 241));
 
         JButton addButton = new JButton("Agregar Sensor");
         JButton refreshButton = new JButton("Actualizar");
-        
+
+        // Search components
+        JLabel searchLabel = new JLabel("Buscar por ID:");
+        JTextField idSearchField = new JTextField(8);
+        JButton searchButton = new JButton("Buscar");
+        JButton clearSearchButton = new JButton("Limpiar");
+
         topPanel.add(addButton);
         topPanel.add(refreshButton);
+        topPanel.add(Box.createHorizontalStrut(10));
+        topPanel.add(searchLabel);
+        topPanel.add(idSearchField);
+        topPanel.add(searchButton);
+        topPanel.add(clearSearchButton);
 
-        // Tabla de sensores
+        // Tabla de sensores (non-editable model)
         String[] columnNames = {"ID", "Nombre", "Tipo", "Ciudad", "País", "Estado"};
-        JTable sensorsTable = new JTable(new DefaultTableModel(columnNames, 0));
+        DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        JTable sensorsTable = new JTable(model);
         JScrollPane scrollPane = new JScrollPane(sensorsTable);
 
-        // Panel de detalles
+        // Panel de detalles (same as before)
         JPanel detailsPanel = new JPanel(new GridBagLayout());
         detailsPanel.setBackground(new Color(236, 240, 241));
         detailsPanel.setBorder(BorderFactory.createTitledBorder("Detalles del Sensor"));
@@ -168,17 +187,16 @@ public class DashboardAdminFrame extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Campos de detalles
         JLabel[] labels = {
-            new JLabel("ID:"), new JLabel(""),
-            new JLabel("Nombre:"), new JLabel(""),
-            new JLabel("Tipo:"), new JLabel(""),
-            new JLabel("Latitud:"), new JLabel(""),
-            new JLabel("Longitud:"), new JLabel(""),
-            new JLabel("Ciudad:"), new JLabel(""),
-            new JLabel("País:"), new JLabel(""),
-            new JLabel("Estado:"), new JLabel(""),
-            new JLabel("Fecha Inicio:"), new JLabel("")
+                new JLabel("ID:"), new JLabel(""),
+                new JLabel("Nombre:"), new JLabel(""),
+                new JLabel("Tipo:"), new JLabel(""),
+                new JLabel("Latitud:"), new JLabel(""),
+                new JLabel("Longitud:"), new JLabel(""),
+                new JLabel("Ciudad:"), new JLabel(""),
+                new JLabel("País:"), new JLabel(""),
+                new JLabel("Estado:"), new JLabel(""),
+                new JLabel("Fecha Inicio:"), new JLabel("")
         };
 
         for (int i = 0; i < labels.length; i += 2) {
@@ -189,23 +207,20 @@ public class DashboardAdminFrame extends JFrame {
             detailsPanel.add(labels[i+1], gbc);
         }
 
-        // Botón para actualizar estado
         JButton toggleStateButton = new JButton("Cambiar Estado");
         gbc.gridx = 0;
         gbc.gridy = labels.length/2;
         gbc.gridwidth = 2;
         detailsPanel.add(toggleStateButton, gbc);
 
-        // Agregar listener a la tabla
+        // Selection listener (uses SensorService to fetch single sensor)
         sensorsTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && sensorsTable.getSelectedRow() != -1) {
                 int row = sensorsTable.getSelectedRow();
                 String sensorId = sensorsTable.getValueAt(row, 0).toString();
-                
                 try {
                     Sensor sensor = SensorService.getInstance().getSensor(Integer.parseInt(sensorId));
                     if (sensor != null) {
-                        // Actualizar labels
                         labels[1].setText(sensorId);
                         labels[3].setText(sensor.getCod());
                         labels[5].setText(sensor.getTipo());
@@ -214,45 +229,93 @@ public class DashboardAdminFrame extends JFrame {
                         labels[11].setText(sensor.getCiudad());
                         labels[13].setText(sensor.getPais());
                         labels[15].setText(sensor.getEstado());
-                        labels[17].setText(sensor.getFechaIni().toString());
+                        labels[17].setText(sensor.getFechaIni() != null ? sensor.getFechaIni().toString() : "");
                     }
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(panel, 
-                        "Error al cargar detalles del sensor: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(panel,
+                            "Error al cargar detalles del sensor: " + ex.getMessage());
                 }
             }
         });
 
-        // Acción del botón Agregar
-        addButton.addActionListener(e -> showAddSensorDialog());
+        // Add action: show modal dialog then refresh list after dialog closes
+        addButton.addActionListener(e -> {
+            showAddSensorDialog();
+            // after dialog closes, reload sensors
+            loadSensorsIntoModel(model);
+        });
 
-        // Acción del botón Actualizar
-        refreshButton.addActionListener(e -> refreshSensorsTable(sensorsTable));
+        // Refresh action
+        refreshButton.addActionListener(e -> loadSensorsIntoModel(model));
 
-        // Acción del botón Cambiar Estado
+        // Search action (background)
+        ActionListener doSearch = evt -> {
+            String txt = idSearchField.getText().trim();
+            if (txt.isEmpty()) {
+                loadSensorsIntoModel(model);
+                return;
+            }
+            try {
+                String cod = txt;
+                new SwingWorker<Sensor, Void>() {
+                    @Override
+                    protected Sensor doInBackground() throws Exception {
+                        return sensorService.getSensorByCode(cod);
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            Sensor s = get();
+                            model.setRowCount(0);
+                            if (s != null) {
+                                model.addRow(new Object[]{
+                                        s.getId(),
+                                        s.getCod(),
+                                        s.getTipo(),
+                                        s.getCiudad(),
+                                        s.getPais(),
+                                        s.getEstado()
+                                });
+                            } else {
+                                JOptionPane.showMessageDialog(panel, "Sensor con ID " + cod + " no encontrado.");
+                            }
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(panel, "Error al buscar sensor: " + ex.getMessage(),
+                                    "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }.execute();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(panel, "El código debe ser un string válido.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        };
+
+        searchButton.addActionListener(doSearch);
+        idSearchField.addActionListener(doSearch); // Enter triggers search
+        clearSearchButton.addActionListener(e -> {
+            idSearchField.setText("");
+            loadSensorsIntoModel(model);
+        });
+
+        // Change state action
         toggleStateButton.addActionListener(e -> {
             int row = sensorsTable.getSelectedRow();
             if (row != -1) {
                 String sensorId = sensorsTable.getValueAt(row, 0).toString();
                 try {
-                    Sensor sensor = SensorService.getInstance().getSensor(Integer.parseInt(sensorId));
-                    if (sensor != null) {
-                        String newState = sensor.getEstado().equals("activo") ? "inactivo" : "activo";
-                        sensor.setEstado(newState);
-                        //SensorService.getInstance().actualizarSensor(sensor);
-                        refreshSensorsTable(sensorsTable);
-                        JOptionPane.showMessageDialog(panel, 
-                            "Estado del sensor actualizado correctamente.");
-                    }
+                    sensorService.changeState(Integer.parseInt(sensorId));
+                    loadSensorsIntoModel(model);
+                    JOptionPane.showMessageDialog(panel, "Estado del sensor actualizado correctamente.");
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(panel, 
-                        "Error al actualizar estado del sensor: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(panel, "Error al actualizar estado del sensor: " + ex.getMessage());
                 }
             }
         });
 
-        // Cargar datos iniciales
-        refreshSensorsTable(sensorsTable);
+        // Initial load
+        loadSensorsIntoModel(model);
 
         // Layout final
         panel.add(topPanel, BorderLayout.NORTH);
@@ -261,6 +324,42 @@ public class DashboardAdminFrame extends JFrame {
 
         return panel;
     }
+
+
+    // Helper: use SwingWorker to call sensorService.getAllSensors() off the EDT and populate the provided model
+    private void loadSensorsIntoModel(DefaultTableModel model) {
+        new SwingWorker<List<Sensor>, Void>() {
+            @Override
+            protected List<Sensor> doInBackground() throws Exception {
+                return SensorService.getInstance().getAllSensors();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<Sensor> sensores = sensorService.getAllSensors();
+                    model.setRowCount(0);
+                    if (sensores != null) {
+                        for (Sensor sensor : sensores) {
+                            model.addRow(new Object[]{
+                                    sensor.getId(),
+                                    sensor.getCod(),
+                                    sensor.getTipo(),
+                                    sensor.getCiudad(),
+                                    sensor.getPais(),
+                                    sensor.getEstado()
+                            });
+                        }
+                    }
+                } catch (Exception ex) {
+                    SwingUtilities.invokeLater(() ->
+                            JOptionPane.showMessageDialog(DashboardAdminFrame.this, "Error al cargar sensores: " + ex.getMessage())
+                    );
+                }
+            }
+        }.execute();
+    }
+
 
     private void showAddSensorDialog() {
         JDialog dialog = new JDialog(this, "Agregar Nuevo Sensor", true);
@@ -319,10 +418,10 @@ public class DashboardAdminFrame extends JFrame {
             try {
                 // Validar campos
                 if (nombreField.getText().trim().isEmpty() ||
-                    latitudField.getText().trim().isEmpty() ||
-                    longitudField.getText().trim().isEmpty() ||
-                    ciudadField.getText().trim().isEmpty() ||
-                    paisField.getText().trim().isEmpty()) {
+                        latitudField.getText().trim().isEmpty() ||
+                        longitudField.getText().trim().isEmpty() ||
+                        ciudadField.getText().trim().isEmpty() ||
+                        paisField.getText().trim().isEmpty()) {
                     throw new IllegalArgumentException("Todos los campos son obligatorios");
                 }
 
@@ -331,19 +430,19 @@ public class DashboardAdminFrame extends JFrame {
 
                 // Crear y guardar sensor
 
-                SensorService.getInstance().createSensor(nombreField.getText(),tipoCombo.getSelectedItem().toString(),lat, lon, ciudadField.getText(),paisField.getText(), java.time.LocalDateTime.now());
-                JOptionPane.showMessageDialog(dialog, 
-                    "Sensor agregado correctamente", "Éxito", 
-                    JOptionPane.INFORMATION_MESSAGE);
+                SensorService.getInstance().createSensor(nombreField.getText(),tipoCombo.getSelectedItem().toString(),lat, lon, ciudadField.getText(),paisField.getText());
+                JOptionPane.showMessageDialog(dialog,
+                        "Sensor agregado correctamente", "Éxito",
+                        JOptionPane.INFORMATION_MESSAGE);
                 dialog.dispose();
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(dialog,
-                    "Latitud y longitud deben ser números válidos",
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                        "Latitud y longitud deben ser números válidos",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(dialog,
-                    "Error al guardar sensor: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                        "Error al guardar sensor: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -363,22 +462,23 @@ public class DashboardAdminFrame extends JFrame {
                     model.setRowCount(0);
                     for (Sensor sensor : sensores) {
                         model.addRow(new Object[]{
-                            sensor.getId(),
-                            sensor.getCod(),
-                            sensor.getTipo(),
-                            sensor.getCiudad(),
-                            sensor.getPais(),
-                            sensor.getEstado()
+                                sensor.getId(),
+                                sensor.getCod(),
+                                sensor.getTipo(),
+                                sensor.getCiudad(),
+                                sensor.getPais(),
+                                sensor.getEstado()
                         });
                     }
                 });
             } catch (Exception e) {
                 javax.swing.SwingUtilities.invokeLater(() ->
-                    JOptionPane.showMessageDialog(this, "Error al cargar sensores: " + e.getMessage())
+                        JOptionPane.showMessageDialog(this, "Error al cargar sensores: " + e.getMessage())
                 );
             }
         }).start();
     }
+
 
     private JPanel createUsersPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));

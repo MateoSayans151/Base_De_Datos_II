@@ -36,7 +36,9 @@ public class FacturaService {
             facturaRepository.createFactura(factura);
             return factura;
         } catch (ErrorConectionMongoException e) {
+            System.out.println(e.getMessage());
             throw new RuntimeException("Error al crear factura en MongoDB: " + e.getMessage(), e);
+
         }
     }
 
@@ -56,7 +58,6 @@ public class FacturaService {
         pago.setFechaPago(LocalDate.now());
         pago.setMontoPagado(factura.getTotal());
         pago.setMetodoPago(metodoPago);
-        pago.setDescripcion(factura.getDescripcion());
         pago.setEstado("Completado");
 
         // Persist via stub repository (no-op)
@@ -75,12 +76,11 @@ public class FacturaService {
         }
         try {
             String nombre = (String) solicitud.getProceso().getClass().getMethod("getNombre").invoke(solicitud.getProceso());
-            factura.setDescripcion("Proceso: " + nombre);
+
         } catch (Exception e) {
-            factura.setDescripcion("Proceso");
+
         }
         factura.setEstado("Pendiente");
-        factura.setTipo("Proceso");
         factura.setFechaEmision(LocalDate.now());
 
         Proceso procesos = new Proceso();
@@ -94,6 +94,9 @@ public class FacturaService {
     public List<Factura> getFacturasByUsuario(int usuarioId) throws ErrorConectionMongoException {
 
             return facturaRepository.getFacturasByUsuario(usuarioId);
+    }
+    public List<Factura> getFacturasByUsuarioByPagadas(int usuarioId) throws ErrorConectionMongoException {
+        return facturaRepository.getFacturasByUsuarioByPagadas(usuarioId);
     }
     
 

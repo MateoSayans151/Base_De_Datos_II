@@ -52,6 +52,7 @@ public class SolicitudProcesoRepository {
 
             Integer usuarioId = null;
             Integer procesoId = null;
+            String nuevoEstado = solicitud.getEstado();
 
             // Resolver usuarioId: si el objeto Usuario no tiene id, intentar buscar por mail en Mongo
             if (solicitud.getUsuario() != null) {
@@ -177,6 +178,33 @@ public class SolicitudProcesoRepository {
             System.err.println("[SolicitudProcesoRepository.deleteById] Error: " + e.getMessage());
             throw new ErrorConectionMongoException("Error al eliminar SolicitudProceso: " + e.getMessage());
         }
+    }
+    public SolicitudProceso updateState(SolicitudProceso updateSolicitud) throws ErrorConectionMongoException {
+        MongoPool mongoPool = MongoPool.getInstance();
+        var db = mongoPool.getConnection();
+
+        try {
+            /*
+
+            var collection = connection.getCollection(COLLECTION_NAME);
+            Document filter = new Document("id", idSensor);
+            Document sensorDoc = collection.find(filter).first();
+            String currentState = sensorDoc.getString("estado");
+            String newState = currentState.equals("activo") ? "inactivo" : "activo";
+            Document update = new Document("$set", new Document("estado", newState));
+             */
+            MongoCollection<Document> col = db.getCollection(COLLECTION_NAME);
+            Document doc = col.find(Filters.eq("id", updateSolicitud.getId())).first();
+            if (doc != null) {
+                Document update = new Document("$set", new Document("estado", updateSolicitud.getEstado()));
+                col.updateOne(Filters.eq("id", updateSolicitud.getId()), update);
+                System.out.println("[SolicitudProcesoRepository.updateState] Updated estado of solicitud id=" + update);
+            }
+        } catch (Exception e) {
+            System.err.println("[SolicitudProcesoRepository.updateState] Error: " + e.getMessage());
+            throw new ErrorConectionMongoException("Error al actualizar estado de SolicitudProceso en MongoDB: " + e.getMessage());
+        }
+        return updateSolicitud;
     }
 
     /* ===========================

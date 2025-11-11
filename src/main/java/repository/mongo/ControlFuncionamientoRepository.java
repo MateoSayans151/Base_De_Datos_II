@@ -86,6 +86,15 @@ public class ControlFuncionamientoRepository {
         }
     }
 
+    public void deleteAllControls() throws ErrorConectionMongoException {
+        try {
+            var connection = MongoPool.getInstance().getConnection();
+            MongoCollection<Document> collection = connection.getCollection(COLLECTION_NAME);
+            collection.deleteMany(new Document());
+        } catch (Exception e) {
+            throw new ErrorConectionMongoException("Error deleting all controls from MongoDB: " + e.getMessage());
+        }
+    }
     public List<ControlFuncionamiento> getAllControls() throws ErrorConectionMongoException {
         try {
             var connection = MongoPool.getInstance().getConnection();

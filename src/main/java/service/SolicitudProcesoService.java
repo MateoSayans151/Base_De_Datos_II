@@ -139,7 +139,7 @@ public class SolicitudProcesoService {
             SolicitudProceso solicitud = repo.findById(id)
                     .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con id " + id));
             solicitud.setEstado(nuevoEstado);
-            return repo.save(solicitud);
+            return repo.updateState(solicitud);
         } catch (ErrorConectionMongoException e) {
             throw new RuntimeException("Mongo: error al actualizar estado de SolicitudProceso id=" + id, e);
         }
